@@ -1,7 +1,7 @@
 {
-    "name": "louis-lemon-ts-package-template",
-    "version": "0.0.0",
-    "description": "Typescript npm package for semantic release test",
+    "name": "@lemoncloud/lemon-web-core",
+    "version": "0.0.0-semantic-release",
+    "description": "Shared library for LEMONCLOUD",
     "exports": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "type": "module",
@@ -21,40 +21,131 @@
     },
     "release": {
         "branches": [
-            "develop"
+            "main"
         ],
         "plugins": [
-            "@semantic-release/commit-analyzer",
-            "@semantic-release/release-notes-generator",
+            [
+                "@semantic-release/commit-analyzer",
+                {
+                    "preset": "conventionalcommits",
+                    "releaseRules": [
+                        {
+                            "type": "refactor",
+                            "release": "patch"
+                        },
+                        {
+                            "type": "chore",
+                            "release": "patch"
+                        },
+                        {
+                            "type": "feat",
+                            "release": "patch"
+                        },
+                        {
+                            "scope": "minor",
+                            "release": "minor"
+                        },
+                        {
+                            "scope": "major",
+                            "release": "major"
+                        }
+                    ]
+                }
+            ],
+            [
+                "@semantic-release/release-notes-generator",
+                {
+                    "preset": "conventionalcommits",
+                    "presetConfig": {
+                        "types": [
+                            {
+                                "type": "feat",
+                                "section": "✨ Features",
+                                "hidden": false
+                            },
+                            {
+                                "type": "fix",
+                                "section": "🐛 Bug Fixes",
+                                "hidden": false
+                            },
+                            {
+                                "type": "perf",
+                                "section": "🌈 Performance",
+                                "hidden": false
+                            },
+                            {
+                                "type": "refactor",
+                                "section": "♻️ Refactor",
+                                "hidden": false
+                            },
+                            {
+                                "type": "style",
+                                "section": "💄 Styles",
+                                "hidden": false
+                            },
+                            {
+                                "type": "revert",
+                                "section": "🕐 Reverts",
+                                "hidden": false
+                            },
+                            {
+                                "type": "ci",
+                                "section": "💫 CI/CD",
+                                "hidden": false
+                            },
+                            {
+                                "type": "test",
+                                "section": "✅ Tests",
+                                "hidden": false
+                            },
+                            {
+                                "type": "chore",
+                                "section": "📦 Chores",
+                                "hidden": false
+                            },
+                            {
+                                "type": "build",
+                                "section": "🔥 Build",
+                                "hidden": false
+                            },
+                            {
+                                "type": "docs",
+                                "section": "📝 Docs",
+                                "hidden": true
+                            }
+                        ]
+                    }
+                }
+            ],
             [
                 "@semantic-release/changelog",
                 {
-                    "changelogFile": "docs/CHANGELOG.md"
+                    "changelogFile": "CHANGELOG.md"
                 }
             ],
-            [
-                "@semantic-release/exec",
-                {
-                    "publishCmd": "pnpm my-release"
-                }
-            ],
+            "@semantic-release/github",
             [
                 "@semantic-release/git",
                 {
                     "assets": [
-                        "docs/CHANGELOG.md",
+                        "CHANGELOG.md",
                         "package.json"
-                    ]
+                    ],
+                    "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
                 }
             ],
-            "@semantic-release/github"
+            "@semantic-release/npm"
         ]
     },
     "keywords": [
         "typescript",
         "npm",
-        "template",
-        "package"
+        "package",
+        "lemoncloud",
+        "lemon",
+        "eurekacodes",
+        "eureka",
+        "codes"
     ],
     "author": "Hyungtak Jin",
     "license": "MIT",
