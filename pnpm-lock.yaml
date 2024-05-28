@@ -44,6 +44,9 @@ devDependencies:
   '@typescript-eslint/parser':
     specifier: ^6.2.0
     version: 6.21.0(eslint@8.57.0)(typescript@5.4.2)
+  clean-pkg-json:
+    specifier: ^1.2.0
+    version: 1.2.0
   conventional-changelog-conventionalcommits:
     specifier: ^8.0.0
     version: 8.0.0
@@ -2410,6 +2413,11 @@ packages:
 
   /cjs-module-lexer@1.2.3:
     resolution: {integrity: sha512-0TNiGstbQmCFwt4akjjBg5pLRTSyj/PkWQ1ZoO2zntmg9yLqSRxwEa4iCfQLGjqhiqBfOJa7W/E8wfGrTDmlZQ==}
+    dev: true
+
+  /clean-pkg-json@1.2.0:
+    resolution: {integrity: sha512-QHBWWOtpSCv5nfMFKwyxn4WMvkYE0msxj5xiqejYGqYepWVrK7O/om1Vn6nSl/WPtYn8ge9YmSCbTi1Hp8k+Hg==}
+    hasBin: true
     dev: true
 
   /clean-stack@2.2.0:
