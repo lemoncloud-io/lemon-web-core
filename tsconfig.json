@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "baseUrl": "./",
+        "target": "es2015",
+        "module": "commonjs",
+        "types": ["node", "jest"],
+        "esModuleInterop": true,
+        "noImplicitAny": false,
+        "forceConsistentCasingInFileNames": true,
+        "strict": false,
+        "skipLibCheck": true,
+        "skipDefaultLibCheck": true,
+        "strictPropertyInitialization": false
+    },
+    "include": ["src"]
+}
