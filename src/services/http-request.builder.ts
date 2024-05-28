@@ -26,10 +26,20 @@ export declare type Params = {
 
 /**
  * Class to build and execute HTTP requests
+ * @example
+ * ```
+ * const response: AxiosResponse<OAuthResponse> = await new HttpRequestBuilder({
+ *     method: 'GET',
+ *     baseURL: `https://api.lemoncloud.io/v1/oauth`,
+ *  })
+ *    .setHeaders({ Cookie: this.cookie })
+ *    .setParams({ page: 0 })
+ *    .execute();
+ * ```
  */
 export class HttpRequestBuilder {
-    private axiosInstance: AxiosInstance; // Axios instance
-    private config: AxiosRequestConfig; // Axios request configuration
+    private axiosInstance: AxiosInstance;
+    private config: AxiosRequestConfig;
 
     /**
      * @constructor
@@ -47,7 +57,7 @@ export class HttpRequestBuilder {
         this.config = {
             ...config,
         };
-        this.axiosInstance = axios.create(this.config); // Create Axios instance
+        this.axiosInstance = axios.create(this.config);
     }
 
     /**
