@@ -65,4 +65,6 @@ testem.log
 # System Files
 Thumbs.db
 
-
+*.js
+!jest.config.json
+!_*.js
