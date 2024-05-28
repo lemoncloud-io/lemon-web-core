@@ -1,0 +1,40 @@
+name: Generate and Deploy TypeDoc
+
+on:
+    push:
+        branches:
+            - develop
+
+jobs:
+    build:
+        name: TypeDoc
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            id-token: write
+            pull-requests: write
+            repository-projects: write
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version-file: '.nvmrc'
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v2
+              with:
+                  version: 8
+                  run_install: true
+
+            - name: Generate TypeDoc
+              run: npx typedoc --out docs
+
+            - name: Deploy to GitHub Pages
+              uses: peaceiris/actions-gh-pages@v3
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./docs
