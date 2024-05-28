@@ -23,7 +23,7 @@
         "branches": [
             "main",
             {
-                "name": "alpha",
+                "name": "develop",
                 "prerelease": true
             },
             {
