@@ -1,7 +1,8 @@
 {
     "name": "@lemoncloud/lemon-web-core",
-    "version": "0.0.0-semantic-release",
+    "version": "1.0.0",
     "description": "Shared library for LEMONCLOUD",
+    "repository": "lemoncloud-io/lemon-web-core",
     "exports": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "type": "module",
@@ -15,13 +16,22 @@
         "test": "jest --passWithNoTests --updateSnapshot --watchAll",
         "test:coverage": "jest --passWithNoTests --updateSnapshot --coverage",
         "build": "pnpm clean && tsup src/index.ts",
+        "prepack": "pnpm build && clean-pkg-json",
         "my-release": "pnpm run build && npm publish",
         "fix:prettier": "prettier \"src/**/*.ts\" --write",
         "fix:lint": "eslint src --ext .ts --fix"
     },
     "release": {
         "branches": [
-            "main"
+            "main",
+            {
+                "name": "alpha",
+                "prerelease": true
+            },
+            {
+                "name": "beta",
+                "prerelease": true
+            }
         ],
         "plugins": [
             [
@@ -99,6 +109,7 @@
         "@types/node": "^20.9.0",
         "@typescript-eslint/eslint-plugin": "^6.2.0",
         "@typescript-eslint/parser": "^6.2.0",
+        "clean-pkg-json": "^1.2.0",
         "conventional-changelog-conventionalcommits": "^8.0.0",
         "conventional-commits-parser": "^6.0.0",
         "eslint": "^8.45.0",
