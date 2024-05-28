@@ -27,7 +27,7 @@ export declare type Params = {
 /**
  * Class to build and execute HTTP requests
  * @example
- * ```
+ * ```ts
  * const response: AxiosResponse<OAuthResponse> = await new HttpRequestBuilder({
  *     method: 'GET',
  *     baseURL: `https://api.lemoncloud.io/v1/oauth`,
