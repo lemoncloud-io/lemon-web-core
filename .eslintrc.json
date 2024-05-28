@@ -5,6 +5,7 @@
     "globals": { "BigInt": true, "console": true, "WebAssembly": true },
     "rules": {
         "no-unused-vars": "off",
+        "no-useless-catch": "off",
         "@typescript-eslint/no-explicit-any": "off",
         "curly": "error",
         "unused-imports/no-unused-imports": "error",
