@@ -2,4 +2,3 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 npx jest --watchAll=false
-npx typedoc --plugin typedoc-plugin-markdown --out docs

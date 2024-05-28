@@ -20,7 +20,7 @@
         "my-release": "pnpm run build && npm publish",
         "fix:prettier": "prettier \"src/**/*.ts\" --write",
         "fix:lint": "eslint src --ext .ts --fix",
-        "typedoc": "npx typedoc --plugin typedoc-plugin-markdown --out docs"
+        "typedoc": "npx typedoc --out docs"
     },
     "release": {
         "branches": [
@@ -124,7 +124,6 @@
         "ts-jest": "^29.1.1",
         "tsup": "^7.1.0",
         "typedoc": "^0.25.13",
-        "typedoc-plugin-markdown": "^4.0.3",
         "typescript": "^5.1.6"
     },
     "dependencies": {
