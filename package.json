@@ -15,13 +15,21 @@
         "test": "jest --passWithNoTests --updateSnapshot --watchAll",
         "test:coverage": "jest --passWithNoTests --updateSnapshot --coverage",
         "build": "pnpm clean && tsup src/index.ts",
-        "my-release": "pnpm run build && npm publish",
+        "release": "pnpm run build && npm publish",
         "fix:prettier": "prettier \"src/**/*.ts\" --write",
         "fix:lint": "eslint src --ext .ts --fix"
     },
     "release": {
         "branches": [
-            "main"
+            "main",
+            {
+                "name": "develop",
+                "prerelease": true
+            },
+            {
+                "name": "beta",
+                "prerelease": true
+            }
         ],
         "plugins": [
             [
@@ -59,6 +67,12 @@
                     "changelogFile": "CHANGELOG.md"
                 }
             ],
+            [
+                "@semantic-release/exec",
+                {
+                    "publishCmd": "pnpm release"
+                }
+            ],
             "@semantic-release/github",
             [
                 "@semantic-release/git",
@@ -69,8 +83,7 @@
                     ],
                     "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
                 }
-            ],
-            "@semantic-release/npm"
+            ]
         ]
     },
     "keywords": [
