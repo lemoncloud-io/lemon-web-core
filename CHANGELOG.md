@@ -1,3 +1,9 @@
+## [1.0.5](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.4...v1.0.5) (2024-05-30)
+
+### Features
+
+-   add init func to aws web core ([7a45774](https://github.com/lemoncloud-io/lemon-web-core/commit/7a45774bda76f690c01e665450341513b3212f3b))
+
 ## [1.0.4](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.3...v1.0.4) (2024-05-30)
 
 ### Bug Fixes
