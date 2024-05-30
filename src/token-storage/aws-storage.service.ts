@@ -22,7 +22,7 @@ export class AWSStorageService extends TokenStorageService {
 
     async initLemonConfig() {
         await this.setItem(USE_X_LEMON_IDENTITY_KEY, 'true');
-        await this.setItem(REGION_KEY, this.config.region);
+        await this.setItem(REGION_KEY, this.config.region || 'ap-northeast-2');
     }
 
     async getAllItems() {

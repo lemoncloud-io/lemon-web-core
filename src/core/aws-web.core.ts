@@ -1,4 +1,4 @@
-import { Body, LemonCredentials, LemonKMS, LemonOAuthToken, Params, WebCoreConfig, WebCoreService } from '../types';
+import { AWSWebCoreState, Body, LemonCredentials, LemonKMS, LemonOAuthToken, Params, WebCoreConfig, WebCoreService } from '../types';
 import { AWSStorageService, USE_X_LEMON_IDENTITY_KEY } from '../token-storage';
 import { calcSignature, LoggerService } from '../utils';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
@@ -18,7 +18,48 @@ export class AWSWebCore implements WebCoreService {
      */
     constructor(private readonly config: WebCoreConfig<'aws'>) {
         this.logger = new LoggerService('AWSCore');
+        this.logger.log('init AWSCore');
         this.tokenStorage = new AWSStorageService(this.config);
+    }
+
+    /**
+     * Checks if there is a cached token and refreshes it if needed.
+     * If the token should be refreshed, it refreshes the token and updates the AWS credentials.
+     * If the token is still valid, it uses the cached credentials to build AWS credentials.
+     *
+     * @returns {Promise<AWSWebCoreState>} - A promise that resolves to a string indicating the action taken.
+     * @throws {Error} - Throws an error if there is no cached token.
+     */
+    async init(): Promise<AWSWebCoreState> {
+        this.logger.log('initilze AWSWebCore');
+        const hasCachedToken = await this.tokenStorage.hasCachedToken();
+        if (!hasCachedToken) {
+            this.logger.warn('has no token!');
+            return 'no-token';
+        }
+
+        const shouldRefreshToken = await this.tokenStorage.shouldRefreshToken();
+        if (shouldRefreshToken) {
+            this.logger.info('should refresh token!');
+            const refreshed = await this.refreshCachedToken();
+            if (refreshed) {
+                await this.getCurrentCredentials();
+                this.logger.info('refreshed token');
+                return 'refreshed';
+            }
+        }
+
+        const cachedToken = await this.tokenStorage.hasCachedToken();
+        if (!cachedToken) {
+            this.logger.warn('has no token!');
+            return 'no-token';
+        }
+
+        // build AWS credential without refresh
+        const credential = await this.tokenStorage.getCachedCredentials();
+        this.createAWSCredentials(credential);
+        this.logger.info('build credentials');
+        return 'build';
     }
 
     /**
@@ -44,7 +85,7 @@ export class AWSWebCore implements WebCoreService {
         method: string,
         url: string,
         params: Params = {},
-        body: Body,
+        body?: Body,
         config?: AxiosRequestConfig
     ): Promise<AxiosResponse<T>> {
         const builder = new AWSHttpRequestBuilder(this.tokenStorage, {
@@ -94,13 +135,17 @@ export class AWSWebCore implements WebCoreService {
         }
 
         return new Promise(resolve => {
-            (<AWS.Credentials>AWS.config.credentials).get(error => {
-                if (error) {
-                    this.logger.error('get AWSConfig.credentials error: ', error);
-                }
-                const isAuthenticated = !error;
-                resolve(isAuthenticated);
-            });
+            try {
+                (<AWS.Credentials>AWS.config.credentials).get(error => {
+                    if (error) {
+                        this.logger.error('get AWSConfig.credentials error: ', error);
+                    }
+                    const isAuthenticated = !error;
+                    resolve(isAuthenticated);
+                });
+            } catch (e) {
+                this.logger.error('isAuthenticated error: ', e);
+            }
         });
     }
 
@@ -120,6 +165,7 @@ export class AWSWebCore implements WebCoreService {
      * @returns {Promise<AWS.Credentials>} - The AWS credentials.
      */
     async buildCredentialsByStorage(): Promise<AWS.Credentials> {
+        this.logger.log('buildCredentialsByStorage()...');
         await this.buildAWSCredentialsByStorage();
         return await this.getCredentials();
     }
@@ -130,6 +176,7 @@ export class AWSWebCore implements WebCoreService {
      * @returns {Promise<void>} - A promise that resolves when the KMS details are saved.
      */
     async saveKMS(kms: LemonKMS): Promise<void> {
+        this.logger.log('saveKMS()...');
         return await this.tokenStorage.saveKMS(kms);
     }
 
@@ -160,7 +207,7 @@ export class AWSWebCore implements WebCoreService {
             ...response.data,
             identityPoolId: cached.identityPoolId,
         };
-        this.logger.info('refreshToken', refreshToken);
+        this.logger.info('success to refresh token');
         return await this.buildCredentialsByToken(refreshToken);
     }
 
@@ -186,7 +233,7 @@ export class AWSWebCore implements WebCoreService {
      * Builds AWS credentials using the cached credentials from storage.
      * @returns {Promise<void>} - A promise that resolves when the credentials are built.
      */
-    async buildAWSCredentialsByStorage(): Promise<void> {
+    private async buildAWSCredentialsByStorage(): Promise<void> {
         this.logger.log('buildAWSCredentialsByStorage()...');
         const credentials = await this.tokenStorage.getCachedCredentials();
 
@@ -230,10 +277,10 @@ export class AWSWebCore implements WebCoreService {
         const shouldRefresh = credentials.needsRefresh();
         if (shouldRefresh) {
             await credentials.refreshPromise();
-            return this.getCurrentCredentials();
+            return await this.getCurrentCredentials();
         }
 
-        return null;
+        return await this.getCurrentCredentials();
     }
 
     /**
