@@ -1,5 +1,6 @@
 import { WebCoreConfig, WebCoreService } from '../types';
 
+// TODO: implment Azure Core
 export class AzureWebCore implements WebCoreService {
     constructor(private readonly config: WebCoreConfig<'azure'>) {}
     isAuthenticated(): Promise<boolean> {
