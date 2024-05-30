@@ -1,3 +1,15 @@
+## [1.0.4](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.3...v1.0.4) (2024-05-30)
+
+### Bug Fixes
+
+-   remove unnecessary request method from WebCoreService interface ([4b2c38c](https://github.com/lemoncloud-io/lemon-web-core/commit/4b2c38cdb5af8f51c7765c042113b1e638b17f7e))
+
+### Features
+
+-   setup core, token-storage ([d7b010d](https://github.com/lemoncloud-io/lemon-web-core/commit/d7b010deea3474405d179525c37d965a6f666d81))
+-   update aws web core ([f1e7a89](https://github.com/lemoncloud-io/lemon-web-core/commit/f1e7a899d8d184b251bbc641241beb93d40e63ca))
+-   update setUseXLemonIdentity to be async ([a131a34](https://github.com/lemoncloud-io/lemon-web-core/commit/a131a34dd29cfd72de72a1fc14e77944963ab816))
+
 ## [1.0.3](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.2...v1.0.3) (2024-05-28)
 
 ### Features
