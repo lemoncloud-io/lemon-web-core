@@ -178,8 +178,8 @@ export class AWSWebCore implements WebCoreService {
      * Sets the use of X-Lemon-Identity header.
      * @param {boolean} use - Whether to use the X-Lemon-Identity header.
      */
-    setUseXLemonIdentity(use: boolean): void {
-        this.tokenStorage.setItem(USE_X_LEMON_IDENTITY_KEY, `${use}`);
+    async setUseXLemonIdentity(use: boolean): Promise<void> {
+        await this.tokenStorage.setItem(USE_X_LEMON_IDENTITY_KEY, `${use}`);
     }
 
     /**
@@ -278,8 +278,8 @@ export class AWSWebCore implements WebCoreService {
     /**
      * Builds AWS credentials using an OAuth token.
      * @private
-     * @param {LemonOAuthToken} token - The OAuth token.
      * @returns {Promise<void>} - A promise that resolves when the credentials are built.
+     * @param credentials
      */
     private createAWSCredentials(credentials: LemonCredentials) {
         const { AccessKeyId, SecretKey, SessionToken } = credentials;
