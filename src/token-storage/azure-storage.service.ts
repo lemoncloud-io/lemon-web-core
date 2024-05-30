@@ -1,10 +1,10 @@
-import { LemonOAuthToken, TokenStorageConfig } from '../types';
+import { LemonOAuthToken, WebCoreConfig } from '../types';
 import { TokenStorageService } from './token-storage.service';
 
 export class AzureStorageService extends TokenStorageService {
     private credentialKeys = ['accountId', 'authId', 'identityId', 'identityToken', 'accessToken', 'hostKey', 'expiredTime'];
 
-    constructor(readonly config: TokenStorageConfig<'azure'>) {
+    constructor(readonly config: WebCoreConfig<'azure'>) {
         super(config);
     }
 

@@ -1,5 +1,5 @@
-import { LemonCredentials, LemonKMS, LemonOAuthToken, TokenStorageConfig } from '../types';
-import { TokenStorageService } from './token-storage.service';
+import { LemonCredentials, LemonKMS, LemonOAuthToken, WebCoreConfig } from '../types';
+import { REGION_KEY, TokenStorageService, USE_X_LEMON_IDENTITY_KEY } from './token-storage.service';
 
 export class AWSStorageService extends TokenStorageService {
     private credentialKeys = [
@@ -15,8 +15,14 @@ export class AWSStorageService extends TokenStorageService {
         'kmsArn',
     ];
 
-    constructor(readonly config: TokenStorageConfig<'aws'>) {
+    constructor(readonly config: WebCoreConfig<'aws'>) {
         super(config);
+        this.initLemonConfig();
+    }
+
+    async initLemonConfig() {
+        await this.setItem(USE_X_LEMON_IDENTITY_KEY, 'true');
+        await this.setItem(REGION_KEY, this.config.region);
     }
 
     async getAllItems() {

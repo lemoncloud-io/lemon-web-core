@@ -3,7 +3,7 @@ name: Generate and Deploy TypeDoc
 on:
     push:
         branches:
-            - develop
+            - main
 
 jobs:
     build:

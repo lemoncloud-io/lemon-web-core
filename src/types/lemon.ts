@@ -40,3 +40,15 @@ export interface Storage {
     setItem(key: string, value: string, ...params: any): any;
     removeItem(key: string, ...params: any): any;
 }
+
+export interface TokenSignature {
+    authId: string;
+    current: string;
+    signature: string;
+    originToken: LemonOAuthToken;
+}
+
+export interface LoggerOption {
+    showTimestamp?: true;
+    showLogType?: true;
+}
