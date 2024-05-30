@@ -1,3 +1,2 @@
 export * from './http-request.builder';
-export * from './cloud-service.factory';
-export * from './cloud.service';
+export * from './sig-v4.service';
