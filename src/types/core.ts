@@ -2,7 +2,6 @@ import { AWSWebCore, AzureWebCore } from '../core';
 
 export interface WebCoreService {
     getSavedToken(): Promise<{ [key: string]: string }>;
-    request(): Promise<any>;
     isAuthenticated(): Promise<boolean>;
     logout(): Promise<void>;
     setUseXLemonIdentity(use: boolean): void;
