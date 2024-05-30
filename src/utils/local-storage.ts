@@ -22,11 +22,10 @@ class MemoryStorage {
     }
 }
 
-export class LocalStorageService extends Storage {
+export class LocalStorageService {
     private storage: any;
 
     constructor() {
-        super();
         try {
             this.storage = window.localStorage;
             this.storage.setItem(`.test-value`, 1);
