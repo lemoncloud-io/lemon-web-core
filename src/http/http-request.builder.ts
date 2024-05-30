@@ -1,28 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-
-/**
- * @typedef {Object} Body - Represents the request body
- * @property {any} [key: string] - Arbitrary key-value pairs
- */
-export declare type Body = {
-    [key: string]: any;
-};
-
-/**
- * @typedef {Object} Headers - Represents the request headers
- * @property {any} [key: string] - Arbitrary key-value pairs
- */
-export declare type Headers = {
-    [key: string]: any;
-};
-
-/**
- * @typedef {Object} Params - Represents the request parameters
- * @property {any} [key: string] - Arbitrary key-value pairs
- */
-export declare type Params = {
-    [key: string]: any;
-};
+import { Body, Headers, Params } from '../types';
 
 /**
  * Class to build and execute HTTP requests
@@ -39,7 +16,12 @@ export declare type Params = {
  */
 export class HttpRequestBuilder {
     private axiosInstance: AxiosInstance;
-    private config: AxiosRequestConfig;
+    private config: AxiosRequestConfig = {
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        method: 'get',
+    };
 
     /**
      * @constructor
@@ -47,16 +29,14 @@ export class HttpRequestBuilder {
      * @throws {Error} If the method is not defined
      * @throws {Error} If the baseURL is not defined
      */
-    constructor(config: AxiosRequestConfig = {}) {
+    constructor(config: AxiosRequestConfig) {
         if (!config.method) {
             throw new Error('method should be defined!');
         }
         if (!config.baseURL) {
             throw new Error('baseURL should be defined!');
         }
-        this.config = {
-            ...config,
-        };
+        this.config = { ...this.config, ...config };
         this.axiosInstance = axios.create(this.config);
     }
 
@@ -97,6 +77,26 @@ export class HttpRequestBuilder {
      */
     setMethod(method: string): HttpRequestBuilder {
         this.config.method = method;
+        return this;
+    }
+
+    /**
+     * Adds additional headers to the request.
+     * @param {Headers} headers - Headers to add.
+     * @returns {HttpRequestBuilder} - Returns the current instance to allow method chaining.
+     */
+    addHeaders(headers: Headers = {}): HttpRequestBuilder {
+        this.config.headers = { ...this.config.headers, ...headers };
+        return this;
+    }
+
+    /**
+     * Adds additional Axios request configuration.
+     * @param {AxiosRequestConfig} config - The configuration to add.
+     * @returns {HttpRequestBuilder} - Returns the current instance to allow method chaining.
+     */
+    addAxiosRequestConfig(config: AxiosRequestConfig): HttpRequestBuilder {
+        this.config = { ...this.config, ...config };
         return this;
     }
 
