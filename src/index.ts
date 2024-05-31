@@ -3,3 +3,4 @@ export * from './types';
 export * from './core';
 export * from './token-storage';
 export * from './vendor';
+export * from './http';

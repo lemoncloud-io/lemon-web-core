@@ -8,7 +8,7 @@ export class AzureStorageService extends TokenStorageService {
     /**
      * The list of keys used to store credentials in the storage.
      */
-    private credentialKeys = ['accountId', 'authId', 'identityId', 'identityToken', 'accessToken', 'hostKey', 'expiredTime'];
+    private credentialKeys = ['accountId', 'authId', 'identityId', 'identityToken', 'accessToken', 'hostKey', 'expiredTime', 'clientId'];
 
     constructor(readonly config: WebCoreConfig<'azure'>) {
         super(config);
@@ -64,8 +64,8 @@ export class AzureStorageService extends TokenStorageService {
             return Promise.resolve(tmp);
         }, Promise.resolve({}));
 
-        const HostKey = await this.storage.getItem(`${this.prefix}.hostKey`);
-        result.credential = { HostKey };
+        const hostKey = await this.storage.getItem(`${this.prefix}.hostKey`);
+        result.credential = { HostKey: hostKey };
 
         delete result.hostKey;
         delete result.expiredTime;
@@ -80,7 +80,7 @@ export class AzureStorageService extends TokenStorageService {
      */
     async saveOAuthToken(token: LemonOAuthToken): Promise<void> {
         const { accountId, authId, credential, identityId, identityToken, accessToken } = token;
-        const { hostKey } = credential;
+        const { hostKey, clientId } = credential;
 
         this.storage.setItem(`${this.prefix}.accountId`, accountId || '');
         this.storage.setItem(`${this.prefix}.authId`, authId || '');
@@ -89,6 +89,7 @@ export class AzureStorageService extends TokenStorageService {
 
         this.storage.setItem(`${this.prefix}.hostKey`, hostKey || '');
         this.storage.setItem(`${this.prefix}.accessToken`, accessToken || '');
+        this.storage.setItem(`${this.prefix}.clientId`, clientId || 'default');
 
         // Set the expiration time for the token.
         const TIME_DELAY = 0.5; // 0.5 = 30 minutes, 1 = 1 hour
