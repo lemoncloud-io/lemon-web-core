@@ -17,7 +17,7 @@ export class AWSStorageService extends TokenStorageService {
 
     constructor(readonly config: WebCoreConfig<'aws'>) {
         super(config);
-        this.initLemonConfig();
+        this.initLemonConfig().then(() => {});
     }
 
     async initLemonConfig() {

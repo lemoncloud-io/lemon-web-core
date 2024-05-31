@@ -20,9 +20,9 @@ export declare type Params = {
 };
 
 /**
- * Defines the structure of an AWS HTTP request.
+ * Defines the structure of an HTTP request.
  */
-export interface AWSHttpRequestData {
+export interface HttpRequestData {
     /**
      * The HTTP method (e.g., GET, POST, PUT, etc.).
      */

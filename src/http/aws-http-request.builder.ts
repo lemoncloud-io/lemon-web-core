@@ -1,5 +1,5 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { AWSHttpRequestData, Body, Headers, Params } from '../types';
+import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { Body, Headers, HttpRequestData, Params } from '../types';
 import { AWSStorageService, REGION_KEY, USE_X_LEMON_IDENTITY_KEY } from '../token-storage';
 import * as AWS from 'aws-sdk/global.js';
 import { sigV4Client } from '../vendor';
@@ -49,7 +49,7 @@ export class AWSHttpRequestBuilder {
         }
         this.config = { ...this.config, ...config };
         this.axiosInstance = axios.create(this.config);
-        this.logger = new LoggerService();
+        this.logger = new LoggerService('AWSHttpBuilder');
     }
 
     /**
@@ -121,7 +121,7 @@ export class AWSHttpRequestBuilder {
     async execute<T>(): Promise<AxiosResponse<T>> {
         try {
             const signedClient = await this.getSignedClient(this.config.baseURL);
-            const data: AWSHttpRequestData = {
+            const data: HttpRequestData = {
                 method: this.config.method?.toLowerCase() || 'get',
                 params: this.config.params,
                 body: this.config.data,
@@ -169,10 +169,10 @@ export class AWSHttpRequestBuilder {
      * Gets the signed headers for the request.
      * @private
      * @param {any} signedClient - The signed AWS client.
-     * @param {AWSHttpRequestData} data - The request data.
+     * @param {HttpRequestData} data - The request data.
      * @returns {Promise<any>} - The signed headers.
      */
-    private async getSignedHeader(signedClient: any, data: AWSHttpRequestData): Promise<any> {
+    private async getSignedHeader(signedClient: any, data: HttpRequestData): Promise<any> {
         if (!signedClient) {
             return {};
         }
@@ -201,7 +201,7 @@ export class AWSHttpRequestBuilder {
      * @param header The header to be added
      * @returns The header with x-lemon-identity added
      */
-    private async addXLemonIdentityToHeader(header: any): Promise<any> {
+    private async addXLemonIdentityToHeader(header: any): Promise<AxiosHeaders> {
         const useXLemonIdentity = await this.tokenStorage.getItem(USE_X_LEMON_IDENTITY_KEY);
         if (!useXLemonIdentity || useXLemonIdentity === 'false') {
             return header;
