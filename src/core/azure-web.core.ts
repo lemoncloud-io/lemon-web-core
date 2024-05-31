@@ -1,23 +1,138 @@
-import { WebCoreConfig, WebCoreService } from '../types';
+import { AzureWebCoreState, Body, LemonOAuthToken, Params, WebCoreConfig, WebCoreService } from '../types';
+import { AzureStorageService, USE_X_LEMON_IDENTITY_KEY } from '../token-storage';
+import { LoggerService } from '../utils';
+import { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { AzureHttpRequestBuilder } from '../http';
 
-// TODO: implment Azure Core
+/**
+ * Class to handle Azure-specific web core operations.
+ * Implements the WebCoreService interface.
+ */
 export class AzureWebCore implements WebCoreService {
-    constructor(private readonly config: WebCoreConfig<'azure'>) {}
-    isAuthenticated(): Promise<boolean> {
-        return Promise.resolve(false);
+    private readonly tokenStorage: AzureStorageService;
+    private readonly logger: LoggerService;
+
+    /**
+     * Creates an instance of AzureWebCore.
+     * @param {WebCoreConfig<'azure'>} config - The configuration for the Azure web core.
+     */
+    constructor(private readonly config: WebCoreConfig<'azure'>) {
+        this.logger = new LoggerService('AzureCore');
+        this.logger.log('init AzureCore');
+        this.tokenStorage = new AzureStorageService(this.config);
     }
 
-    logout(): Promise<void> {
+    /**
+     * Initializes the Azure web core by checking for cached tokens.
+     * @returns {Promise<AzureWebCoreState>} - The state of the Azure web core after initialization.
+     */
+    async init(): Promise<AzureWebCoreState> {
+        this.logger.log('initialize AzureCore');
+        const hasCachedToken = await this.tokenStorage.hasCachedToken();
+        if (!hasCachedToken) {
+            this.logger.warn('has no token!');
+            return 'no-token';
+        }
+
+        const shouldRefreshToken = await this.tokenStorage.shouldRefreshToken();
+        if (shouldRefreshToken) {
+            this.logger.info('should refresh token!');
+            // TODO: refresh azure token
+        }
+        return 'has-token';
+    }
+
+    /**
+     * Builds a signed request using the provided Axios configuration.
+     * @param {AxiosRequestConfig} config - The Axios request configuration.
+     * @returns {AzureHttpRequestBuilder} - The request builder for the signed request.
+     */
+    buildSignedRequest(config: AxiosRequestConfig): AzureHttpRequestBuilder {
+        return new AzureHttpRequestBuilder(this.tokenStorage, config);
+    }
+
+    /**
+     * Executes a signed HTTP request.
+     * @template T
+     * @param {string} method - The HTTP method to use for the request.
+     * @param {string} url - The URL for the request.
+     * @param {Params} [params={}] - The URL parameters for the request.
+     * @param {Body} [body] - The request body.
+     * @param {AxiosRequestConfig} [config] - Additional Axios request configuration.
+     * @returns {Promise<AxiosResponse<T>>} - The Axios response.
+     */
+    async signedRequest<T>(
+        method: string,
+        url: string,
+        params: Params = {},
+        body?: Body,
+        config?: AxiosRequestConfig
+    ): Promise<AxiosResponse<T>> {
+        const builder = new AzureHttpRequestBuilder(this.tokenStorage, {
+            method,
+            baseURL: url,
+            params,
+        });
+        if (body) {
+            builder.setBody(body);
+        }
+        if (config) {
+            builder.addAxiosRequestConfig(config);
+        }
+        return await builder.execute();
+    }
+
+    /**
+     * Retrieves all saved tokens from the storage.
+     * @returns {Promise<{ [key: string]: string }>} - An object containing all saved tokens.
+     */
+    getSavedToken(): Promise<{ [key: string]: string }> {
+        return this.tokenStorage.getAllItems();
+    }
+
+    /**
+     * Checks if the user is authenticated.
+     * @returns {Promise<boolean>} - True if authenticated, otherwise false.
+     */
+    async isAuthenticated(): Promise<boolean> {
+        const hasCachedToken = await this.tokenStorage.hasCachedToken();
+        if (!hasCachedToken) {
+            return false;
+        }
+
+        const shouldRefreshToken = await this.tokenStorage.shouldRefreshToken();
+        if (shouldRefreshToken) {
+            this.logger.info('should refresh token!');
+            // TODO: refresh azure token
+            return true;
+        }
+        return true;
+    }
+
+    /**
+     * Saves an OAuth token to the storage.
+     * @param {LemonOAuthToken} token - The OAuth token to save.
+     * @returns {Promise<void>} - A promise that resolves when the token is saved.
+     */
+    async saveOAuthToken(token: LemonOAuthToken): Promise<void> {
+        return await this.tokenStorage.saveOAuthToken(token);
+    }
+
+    /**
+     * Logs the user out by clearing the OAuth token from the storage.
+     * @returns {Promise<void>} - A promise that resolves when the user is logged out.
+     */
+    async logout(): Promise<void> {
+        await this.tokenStorage.clearOAuthToken();
         return;
     }
 
-    request(): Promise<any> {
-        return Promise.resolve(undefined);
-    }
-
-    setUseXLemonIdentity(): void {}
-
-    getSavedToken(): Promise<{ [p: string]: string }> {
-        return Promise.resolve({});
+    /**
+     * Sets whether to use the x-lemon-identity header.
+     * @param {boolean} use - True to use the x-lemon-identity header, otherwise false.
+     * @returns {Promise<void>} - A promise that resolves when the setting is updated.
+     */
+    async setUseXLemonIdentity(use: boolean): Promise<void> {
+        await this.tokenStorage.setItem(USE_X_LEMON_IDENTITY_KEY, `${use}`);
     }
 }

@@ -4,6 +4,11 @@
 export type AWSWebCoreState = 'no-token' | 'refreshed' | 'build';
 
 /**
+ * Represents the state of the Azure Web Core service.
+ */
+export type AzureWebCoreState = 'no-token' | 'has-token';
+
+/**
  * Represents the ARN of a KMS key in AWS.
  */
 export interface LemonKMS {
