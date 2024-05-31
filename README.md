@@ -39,6 +39,7 @@ npm install @lemoncloud/lemon-web-core
 ## Usage
 
 The LemonWebCore Library allows you to create and use instances for different cloud providers. Below are the usage examples for WebCoreFactory, AWSWebCore, and AzureWebCore.
+Please see [documentation](https://tech.lemoncloud.io/lemon-web-core/) for more information.
 
 ### WebCoreFactory
 

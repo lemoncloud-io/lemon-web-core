@@ -38,7 +38,7 @@ export class AzureStorageService extends TokenStorageService {
         const accessToken = await this.storage.getItem(`${this.prefix}.accessToken`);
         const hostKey = await this.storage.getItem(`${this.prefix}.hostKey`);
 
-        return identityToken !== null && accessToken !== null && hostKey !== null && expiredTime !== null;
+        return !!identityToken && !!accessToken && !!hostKey && !!expiredTime;
     }
 
     /**
