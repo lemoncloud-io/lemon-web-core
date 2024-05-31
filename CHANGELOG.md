@@ -1,3 +1,9 @@
+## [1.0.6](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.5...v1.0.6) (2024-05-31)
+
+### Features
+
+-   add AzureHttpRequestBuilder class ([80e3164](https://github.com/lemoncloud-io/lemon-web-core/commit/80e3164894dff6faa5cd8931265e6bc77bf2da62))
+
 ## [1.0.5](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.4...v1.0.5) (2024-05-30)
 
 ### Features
