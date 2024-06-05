@@ -1,7 +1,7 @@
 import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { Body, Headers, HttpRequestData, Params } from '../types';
 import { AWSStorageService, REGION_KEY, USE_X_LEMON_IDENTITY_KEY } from '../token-storage';
-import * as AWS from 'aws-sdk/global.js';
+import AWS from 'aws-sdk/global';
 import { sigV4Client } from '../vendor';
 import { isEmptyObject, LoggerService } from '../utils';
 
