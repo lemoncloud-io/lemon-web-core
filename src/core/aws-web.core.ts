@@ -3,7 +3,7 @@ import { AWSStorageService, USE_X_LEMON_IDENTITY_KEY } from '../token-storage';
 import { calcSignature, LoggerService } from '../utils';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { AWSHttpRequestBuilder } from '../http';
-import AWS from 'aws-sdk/global';
+import AWS from 'aws-sdk/global.js';
 
 /**
  * AWSWebCore class implements AWS-based operations for Lemoncloud authentication logic
