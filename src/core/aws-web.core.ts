@@ -18,7 +18,6 @@ export class AWSWebCore implements WebCoreService {
      */
     constructor(private readonly config: WebCoreConfig<'aws'>) {
         this.logger = new LoggerService('AWSCore');
-        this.logger.log('init AWSCore');
         this.tokenStorage = new AWSStorageService(this.config);
     }
 
@@ -31,34 +30,32 @@ export class AWSWebCore implements WebCoreService {
      * @throws {Error} - Throws an error if there is no cached token.
      */
     async init(): Promise<AWSWebCoreState> {
-        this.logger.log('initilze AWSWebCore');
         const hasCachedToken = await this.tokenStorage.hasCachedToken();
         if (!hasCachedToken) {
-            this.logger.warn('has no token!');
+            this.logger.warn('initialized without token!');
             return 'no-token';
         }
 
         const shouldRefreshToken = await this.tokenStorage.shouldRefreshToken();
         if (shouldRefreshToken) {
-            this.logger.info('should refresh token!');
             const refreshed = await this.refreshCachedToken();
             if (refreshed) {
                 await this.getCurrentCredentials();
-                this.logger.info('refreshed token');
+                this.logger.info('initialized and refreshed token!');
                 return 'refreshed';
             }
         }
 
         const cachedToken = await this.tokenStorage.hasCachedToken();
         if (!cachedToken) {
-            this.logger.warn('has no token!');
+            this.logger.warn('initialized without token!');
             return 'no-token';
         }
 
         // build AWS credential without refresh
         const credential = await this.tokenStorage.getCachedCredentials();
         this.createAWSCredentials(credential);
-        this.logger.info('build credentials');
+        this.logger.info('initialized with token!');
         return 'build';
     }
 
