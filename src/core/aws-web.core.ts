@@ -1,4 +1,14 @@
-import { AWSWebCoreState, Body, LemonCredentials, LemonKMS, LemonOAuthToken, Params, WebCoreConfig, WebCoreService } from '../types';
+import {
+    AWSWebCoreState,
+    Body,
+    LemonCredentials,
+    LemonKMS,
+    LemonOAuthToken,
+    Params,
+    RefreshTokenBody,
+    WebCoreConfig,
+    WebCoreService,
+} from '../types';
 import { AWSStorageService, USE_X_LEMON_IDENTITY_KEY } from '../token-storage';
 import { calcSignature, LoggerService } from '../utils';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
@@ -234,11 +244,16 @@ export class AWSWebCore implements WebCoreService {
         const current = new Date().toISOString();
         const signature = calcSignature(payload, current);
 
+        let body: RefreshTokenBody = { current, signature };
+        if (domain && domain.length > 0) {
+            body = { ...body, domain };
+        }
+
         const response: AxiosResponse<LemonOAuthToken> = await this.signedRequest(
             'POST',
             url ? url : `${this.config.oAuthEndpoint}/oauth/${cached.authId}/refresh`,
             {},
-            { current, signature, domain }
+            { ...body }
         );
         const refreshToken = {
             ...response.data,
