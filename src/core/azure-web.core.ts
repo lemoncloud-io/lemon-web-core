@@ -18,7 +18,6 @@ export class AzureWebCore implements WebCoreService {
      */
     constructor(private readonly config: WebCoreConfig<'azure'>) {
         this.logger = new LoggerService('AzureCore');
-        this.logger.log('init AzureCore');
         this.tokenStorage = new AzureStorageService(this.config);
     }
 
@@ -27,18 +26,18 @@ export class AzureWebCore implements WebCoreService {
      * @returns {Promise<AzureWebCoreState>} - The state of the Azure web core after initialization.
      */
     async init(): Promise<AzureWebCoreState> {
-        this.logger.log('initialize AzureCore');
         const hasCachedToken = await this.tokenStorage.hasCachedToken();
         if (!hasCachedToken) {
-            this.logger.warn('has no token!');
+            this.logger.warn('initialized without token!');
             return 'no-token';
         }
 
         const shouldRefreshToken = await this.tokenStorage.shouldRefreshToken();
         if (shouldRefreshToken) {
-            this.logger.info('should refresh token!');
+            this.logger.info('initialized and refreshed token!');
             // TODO: refresh azure token
         }
+        this.logger.info('initialized with token!');
         return 'has-token';
     }
 
