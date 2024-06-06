@@ -2,7 +2,7 @@ import { AzureWebCoreState, Body, LemonOAuthToken, Params, WebCoreConfig, WebCor
 import { AzureStorageService, USE_X_LEMON_IDENTITY_KEY } from '../token-storage';
 import { LoggerService } from '../utils';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { AzureHttpRequestBuilder } from '../http';
+import { AzureHttpRequestBuilder, HttpRequestBuilder } from '../http';
 
 /**
  * Class to handle Azure-specific web core operations.
@@ -40,6 +40,46 @@ export class AzureWebCore implements WebCoreService {
             // TODO: refresh azure token
         }
         return 'has-token';
+    }
+
+    /**
+     * Builds a request using HttpRequestBuilder without Credentials.
+     * @param {AxiosRequestConfig} config - The Axios request configuration.
+     * @returns {HttpRequestBuilder} - The HttpRequestBuilder instance.
+     */
+    buildRequest(config: AxiosRequestConfig): HttpRequestBuilder {
+        return new HttpRequestBuilder(config);
+    }
+
+    /**
+     * Executes a HTTP request without Credentials.
+     * @template T
+     * @param {string} method - The HTTP method.
+     * @param {string} url - The request URL.
+     * @param {Params} [params={}] - The request parameters.
+     * @param {Body} body - The request body.
+     * @param {AxiosRequestConfig} [config] - Additional Axios request configuration.
+     * @returns {Promise<AxiosResponse<T>>} - The Axios response.
+     */
+    async request<T>(
+        method: string,
+        url: string,
+        params: Params = {},
+        body?: Body,
+        config?: AxiosRequestConfig
+    ): Promise<AxiosResponse<T>> {
+        const builder = new HttpRequestBuilder({
+            method,
+            baseURL: url,
+            params,
+        });
+        if (body) {
+            builder.setBody(body);
+        }
+        if (config) {
+            builder.addAxiosRequestConfig(config);
+        }
+        return await builder.execute();
     }
 
     /**
