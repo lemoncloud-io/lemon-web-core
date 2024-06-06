@@ -2,7 +2,7 @@ import { AWSWebCoreState, Body, LemonCredentials, LemonKMS, LemonOAuthToken, Par
 import { AWSStorageService, USE_X_LEMON_IDENTITY_KEY } from '../token-storage';
 import { calcSignature, LoggerService } from '../utils';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { AWSHttpRequestBuilder } from '../http';
+import { AWSHttpRequestBuilder, HttpRequestBuilder } from '../http';
 import AWS from 'aws-sdk/global.js';
 
 /**
@@ -60,6 +60,46 @@ export class AWSWebCore implements WebCoreService {
         this.createAWSCredentials(credential);
         this.logger.info('build credentials');
         return 'build';
+    }
+
+    /**
+     * Builds a request using HttpRequestBuilder without Credentials.
+     * @param {AxiosRequestConfig} config - The Axios request configuration.
+     * @returns {HttpRequestBuilder} - The HttpRequestBuilder instance.
+     */
+    buildRequest(config: AxiosRequestConfig): HttpRequestBuilder {
+        return new HttpRequestBuilder(config);
+    }
+
+    /**
+     * Executes a HTTP request without Credentials.
+     * @template T
+     * @param {string} method - The HTTP method.
+     * @param {string} url - The request URL.
+     * @param {Params} [params={}] - The request parameters.
+     * @param {Body} body - The request body.
+     * @param {AxiosRequestConfig} [config] - Additional Axios request configuration.
+     * @returns {Promise<AxiosResponse<T>>} - The Axios response.
+     */
+    async request<T>(
+        method: string,
+        url: string,
+        params: Params = {},
+        body?: Body,
+        config?: AxiosRequestConfig
+    ): Promise<AxiosResponse<T>> {
+        const builder = new HttpRequestBuilder({
+            method,
+            baseURL: url,
+            params,
+        });
+        if (body) {
+            builder.setBody(body);
+        }
+        if (config) {
+            builder.addAxiosRequestConfig(config);
+        }
+        return await builder.execute();
     }
 
     /**
