@@ -1,3 +1,9 @@
+## [1.0.12](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.11...v1.0.12) (2024-06-06)
+
+### Bug Fixes
+
+-   sign request with current, signature, and optional domain ([d913123](https://github.com/lemoncloud-io/lemon-web-core/commit/d913123c2c3bf16faa82138449dfd8a4b4edf4a7))
+
 ## [1.0.11](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.10...v1.0.11) (2024-06-06)
 
 ## [1.0.10](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.9...v1.0.10) (2024-06-06)
