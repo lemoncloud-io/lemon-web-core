@@ -1,6 +1,6 @@
 {
     "name": "@lemoncloud/lemon-web-core",
-    "version": "1.0.9",
+    "version": "1.0.10",
     "description": "Shared library for LEMONCLOUD",
     "repository": "lemoncloud-io/lemon-web-core",
     "exports": "./dist/index.js",

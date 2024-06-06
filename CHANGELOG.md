@@ -1,3 +1,9 @@
+## [1.0.10](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.9...v1.0.10) (2024-06-06)
+
+### Features
+
+-   add HttpRequestBuilder without credentials ([295861d](https://github.com/lemoncloud-io/lemon-web-core/commit/295861dbc856dec05c7bd1bc203db62059efa029))
+
 ## [1.0.9](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.8...v1.0.9) (2024-06-05)
 
 ## [1.0.8](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.7...v1.0.8) (2024-06-05)
