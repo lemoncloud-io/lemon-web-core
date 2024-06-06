@@ -197,3 +197,21 @@ export interface LoggerOption {
      */
     showLogType?: boolean;
 }
+
+/**
+ * Interface representing the body of a refresh token request.
+ */
+export interface RefreshTokenBody {
+    /**
+     * The current token.
+     */
+    current: string;
+    /**
+     * The signature of the token.
+     */
+    signature: string;
+    /**
+     * Optional. The domain of the token.
+     */
+    domain?: string;
+}
