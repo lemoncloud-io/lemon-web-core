@@ -1,7 +1,7 @@
 {
     "name": "@lemoncloud/lemon-web-core",
     "version": "1.0.12",
-    "description": "Shared library for LEMONCLOUD",
+    "description": "Core Web-based Library for signing request at LEMONCLOUD",
     "repository": "lemoncloud-io/lemon-web-core",
     "exports": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -127,6 +127,11 @@
         "typescript": "^5.1.6"
     },
     "dependencies": {
+        "aws-sdk": "^2.1630.0",
+        "axios": "^1.7.2",
+        "crypto-js": "^4.2.0"
+    },
+    "peerDependencies": {
         "aws-sdk": "^2.1630.0",
         "axios": "^1.7.2",
         "crypto-js": "^4.2.0"
