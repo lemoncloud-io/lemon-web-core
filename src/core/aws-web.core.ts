@@ -257,6 +257,7 @@ export class AWSWebCore implements WebCoreService {
         );
         const refreshToken = {
             ...response.data,
+            identityToken: response.data.identityToken || cached.identityToken,
             identityPoolId: cached.identityPoolId,
         };
         this.logger.info('success to refresh token');
