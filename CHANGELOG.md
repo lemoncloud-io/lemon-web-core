@@ -1,3 +1,9 @@
+## [1.0.13](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.12...v1.0.13) (2024-06-07)
+
+### Bug Fixes
+
+-   refresh token with identity token ([2ae68b2](https://github.com/lemoncloud-io/lemon-web-core/commit/2ae68b26d22c11c5c2cdf6de123aa154ee1835be))
+
 ## [1.0.12](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.11...v1.0.12) (2024-06-06)
 
 ### Bug Fixes
