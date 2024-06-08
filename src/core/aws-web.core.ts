@@ -285,8 +285,7 @@ export class AWSWebCore implements WebCoreService {
 
     /**
      * Asynchronously retrieves the token signature.
-     *
-     * @returns {Promise<TokenSignature>} A promise that resolves to a TokenSignature object.
+     * @returns {Promise<TokenSignature>} - A promise that resolves to a TokenSignature object.
      */
     async getTokenSignature(): Promise<TokenSignature> {
         const originToken = await this.tokenStorage.getCachedOAuthToken();
