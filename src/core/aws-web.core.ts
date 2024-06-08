@@ -6,6 +6,7 @@ import {
     LemonOAuthToken,
     Params,
     RefreshTokenBody,
+    TokenSignature,
     WebCoreConfig,
     WebCoreService,
 } from '../types';
@@ -283,21 +284,20 @@ export class AWSWebCore implements WebCoreService {
     }
 
     /**
-     * Builds AWS credentials using the cached credentials from storage.
-     * @returns {Promise<void>} - A promise that resolves when the credentials are built.
+     * Asynchronously retrieves the token signature.
+     * @returns {Promise<TokenSignature>} - A promise that resolves to a TokenSignature object.
      */
-    private async buildAWSCredentialsByStorage(): Promise<void> {
-        this.logger.log('buildAWSCredentialsByStorage()...');
-        const credentials = await this.tokenStorage.getCachedCredentials();
-
-        const { AccessKeyId, SecretKey } = credentials;
-        if (!AccessKeyId) {
-            throw new Error('.AccessKeyId (string) is required!');
-        }
-        if (!SecretKey) {
-            throw new Error('.SecretKey (string) is required!');
-        }
-        this.createAWSCredentials(credentials);
+    async getTokenSignature(): Promise<TokenSignature> {
+        const originToken = await this.tokenStorage.getCachedOAuthToken();
+        const payload = {
+            authId: originToken.authId,
+            accountId: originToken.accountId,
+            identityId: originToken.identityId,
+            identityToken: originToken.identityToken,
+        };
+        const current = new Date().toISOString();
+        const signature = calcSignature(payload, current);
+        return { authId: payload.authId, current, signature, originToken };
     }
 
     /**
@@ -334,6 +334,24 @@ export class AWSWebCore implements WebCoreService {
         }
 
         return await this.getCurrentCredentials();
+    }
+
+    /**
+     * Builds AWS credentials using the cached credentials from storage.
+     * @returns {Promise<void>} - A promise that resolves when the credentials are built.
+     */
+    private async buildAWSCredentialsByStorage(): Promise<void> {
+        this.logger.log('buildAWSCredentialsByStorage()...');
+        const credentials = await this.tokenStorage.getCachedCredentials();
+
+        const { AccessKeyId, SecretKey } = credentials;
+        if (!AccessKeyId) {
+            throw new Error('.AccessKeyId (string) is required!');
+        }
+        if (!SecretKey) {
+            throw new Error('.SecretKey (string) is required!');
+        }
+        this.createAWSCredentials(credentials);
     }
 
     /**

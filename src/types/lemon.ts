@@ -215,3 +215,32 @@ export interface RefreshTokenBody {
      */
     domain?: string;
 }
+
+/**
+ * Represents a token signature.
+ */
+export interface TokenSignature {
+    /**
+     * The authentication ID associated with the token signature.
+     * @type {string}
+     */
+    authId: string;
+
+    /**
+     * The current token or status associated with the token signature.
+     * @type {string}
+     */
+    current: string;
+
+    /**
+     * The signature string associated with the token signature.
+     * @type {string}
+     */
+    signature: string;
+
+    /**
+     * The original Lemon OAuth token associated with the token signature.
+     * @type {LemonOAuthToken}
+     */
+    originToken: LemonOAuthToken;
+}
