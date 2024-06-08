@@ -1,3 +1,9 @@
+## [1.0.14](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.13...v1.0.14) (2024-06-08)
+
+### Features
+
+-   add getTokenSignature method and TokenSignature interface ([45b947a](https://github.com/lemoncloud-io/lemon-web-core/commit/45b947a2c40872c239e4268ecb1b87e178c8d3dc))
+
 ## [1.0.13](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.12...v1.0.13) (2024-06-07)
 
 ### Bug Fixes
