@@ -1,3 +1,9 @@
+## [1.0.15](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.14...v1.0.15) (2024-06-10)
+
+### Features
+
+-   add HttpResponse type ([4829273](https://github.com/lemoncloud-io/lemon-web-core/commit/4829273f793d0f349b9346f7aee26f4a1143bef2))
+
 ## [1.0.14](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.13...v1.0.14) (2024-06-08)
 
 ### Features
