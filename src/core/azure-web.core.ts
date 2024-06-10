@@ -1,7 +1,7 @@
-import { AzureWebCoreState, Body, LemonOAuthToken, Params, WebCoreConfig, WebCoreService } from '../types';
+import { AzureWebCoreState, Body, HttpResponse, LemonOAuthToken, Params, WebCoreConfig, WebCoreService } from '../types';
 import { AzureStorageService, USE_X_LEMON_IDENTITY_KEY } from '../token-storage';
 import { LoggerService } from '../utils';
-import { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import { AzureHttpRequestBuilder, HttpRequestBuilder } from '../http';
 
 /**
@@ -58,15 +58,9 @@ export class AzureWebCore implements WebCoreService {
      * @param {Params} [params={}] - The request parameters.
      * @param {Body} body - The request body.
      * @param {AxiosRequestConfig} [config] - Additional Axios request configuration.
-     * @returns {Promise<AxiosResponse<T>>} - The Axios response.
+     * @returns {Promise<HttpResponse<T>>} - The Axios response.
      */
-    async request<T>(
-        method: string,
-        url: string,
-        params: Params = {},
-        body?: Body,
-        config?: AxiosRequestConfig
-    ): Promise<AxiosResponse<T>> {
+    async request<T>(method: string, url: string, params: Params = {}, body?: Body, config?: AxiosRequestConfig): Promise<HttpResponse<T>> {
         const builder = new HttpRequestBuilder({
             method,
             baseURL: url,
@@ -98,7 +92,7 @@ export class AzureWebCore implements WebCoreService {
      * @param {Params} [params={}] - The URL parameters for the request.
      * @param {Body} [body] - The request body.
      * @param {AxiosRequestConfig} [config] - Additional Axios request configuration.
-     * @returns {Promise<AxiosResponse<T>>} - The Axios response.
+     * @returns {Promise<HttpResponse<T>>} - The Axios response.
      */
     async signedRequest<T>(
         method: string,
@@ -106,7 +100,7 @@ export class AzureWebCore implements WebCoreService {
         params: Params = {},
         body?: Body,
         config?: AxiosRequestConfig
-    ): Promise<AxiosResponse<T>> {
+    ): Promise<HttpResponse<T>> {
         const builder = new AzureHttpRequestBuilder(this.tokenStorage, {
             method,
             baseURL: url,

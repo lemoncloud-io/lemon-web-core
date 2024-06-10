@@ -1,6 +1,7 @@
 import {
     AWSWebCoreState,
     Body,
+    HttpResponse,
     LemonCredentials,
     LemonKMS,
     LemonOAuthToken,
@@ -12,7 +13,7 @@ import {
 } from '../types';
 import { AWSStorageService, USE_X_LEMON_IDENTITY_KEY } from '../token-storage';
 import { calcSignature, LoggerService } from '../utils';
-import { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { AxiosRequestConfig } from 'axios';
 import { AWSHttpRequestBuilder, HttpRequestBuilder } from '../http';
 import AWS from 'aws-sdk/global.js';
 
@@ -87,15 +88,9 @@ export class AWSWebCore implements WebCoreService {
      * @param {Params} [params={}] - The request parameters.
      * @param {Body} body - The request body.
      * @param {AxiosRequestConfig} [config] - Additional Axios request configuration.
-     * @returns {Promise<AxiosResponse<T>>} - The Axios response.
+     * @returns {Promise<Response<T>>} - The Axios response.
      */
-    async request<T>(
-        method: string,
-        url: string,
-        params: Params = {},
-        body?: Body,
-        config?: AxiosRequestConfig
-    ): Promise<AxiosResponse<T>> {
+    async request<T>(method: string, url: string, params: Params = {}, body?: Body, config?: AxiosRequestConfig): Promise<HttpResponse<T>> {
         const builder = new HttpRequestBuilder({
             method,
             baseURL: url,
@@ -127,7 +122,7 @@ export class AWSWebCore implements WebCoreService {
      * @param {Params} [params={}] - The request parameters.
      * @param {Body} body - The request body.
      * @param {AxiosRequestConfig} [config] - Additional Axios request configuration.
-     * @returns {Promise<AxiosResponse<T>>} - The Axios response.
+     * @returns {Promise<HttpResponse<T>>} - The Axios response.
      */
     async signedRequest<T>(
         method: string,
@@ -135,7 +130,7 @@ export class AWSWebCore implements WebCoreService {
         params: Params = {},
         body?: Body,
         config?: AxiosRequestConfig
-    ): Promise<AxiosResponse<T>> {
+    ): Promise<HttpResponse<T>> {
         const builder = new AWSHttpRequestBuilder(this.tokenStorage, {
             method,
             baseURL: url,
@@ -250,7 +245,7 @@ export class AWSWebCore implements WebCoreService {
             body = { ...body, domain };
         }
 
-        const response: AxiosResponse<LemonOAuthToken> = await this.signedRequest(
+        const response: HttpResponse<LemonOAuthToken> = await this.signedRequest(
             'POST',
             url ? url : `${this.config.oAuthEndpoint}/oauth/${cached.authId}/refresh`,
             {},

@@ -1,5 +1,5 @@
-import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { Body, Headers, HttpRequestData, Params } from '../types';
+import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig } from 'axios';
+import { Body, Headers, HttpRequestData, HttpResponse, Params } from '../types';
 import { AWSStorageService, REGION_KEY, USE_X_LEMON_IDENTITY_KEY } from '../token-storage';
 import AWS from 'aws-sdk/global.js';
 import { sigV4Client } from '../vendor';
@@ -9,7 +9,7 @@ import { isEmptyObject, LoggerService } from '../utils';
  * Class to build and execute HTTP requests with AWS signing
  * @example
  * ```ts
- * const response: AxiosResponse<OAuthResponse> = await new AWSHttpRequestBuilder({
+ * const response: HttpResponse<OAuthResponse> = await new AWSHttpRequestBuilder({
  *     method: 'GET',
  *     baseURL: `https://api.lemoncloud.io/v1/oauth`,
  *  })
@@ -115,10 +115,10 @@ export class AWSHttpRequestBuilder {
     /**
      * Executes the HTTP request.
      * @template T
-     * @returns {Promise<AxiosResponse<T>>} - Promise containing the response.
+     * @returns {Promise<HttpResponse<T>>} - Promise containing the response.
      * @throws {Error} If an error occurs during the request.
      */
-    async execute<T>(): Promise<AxiosResponse<T>> {
+    async execute<T>(): Promise<HttpResponse<T>> {
         try {
             const signedClient = await this.getSignedClient(this.config.baseURL);
             const data: HttpRequestData = {

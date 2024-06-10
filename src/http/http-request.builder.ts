@@ -1,11 +1,11 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { Body, Headers, Params } from '../types';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { Body, Headers, HttpResponse, Params } from '../types';
 
 /**
  * Class to build and execute HTTP requests
  * @example
  * ```ts
- * const response: AxiosResponse<OAuthResponse> = await new HttpRequestBuilder({
+ * const response: HttpResponse<OAuthResponse> = await new HttpRequestBuilder({
  *     method: 'GET',
  *     baseURL: `https://api.lemoncloud.io/v1/oauth`,
  *  })
@@ -103,10 +103,10 @@ export class HttpRequestBuilder {
     /**
      * Executes the HTTP request
      * @template T
-     * @returns {Promise<AxiosResponse<T>>} - Promise containing the response
+     * @returns {Promise<HttpResponse<T>>} - Promise containing the response
      * @throws {Error} If an error occurs during the request
      */
-    async execute<T>(): Promise<AxiosResponse<T>> {
+    async execute<T>(): Promise<HttpResponse<T>> {
         try {
             return await this.axiosInstance.request<T>(this.config);
         } catch (error) {
