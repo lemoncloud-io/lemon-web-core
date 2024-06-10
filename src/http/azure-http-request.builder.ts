@@ -1,12 +1,12 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { Body, Headers, Params } from '../types';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { Body, Headers, HttpResponse, Params } from '../types';
 import { AzureStorageService, USE_X_LEMON_IDENTITY_KEY } from '../token-storage';
 
 /**
  * Class to build and execute HTTP requests with AWS signing
  * @example
  * ```ts
- * const response: AxiosResponse<OAuthResponse> = await new AzureHttpRequestBuilder({
+ * const response: HttpResponse<OAuthResponse> = await new AzureHttpRequestBuilder({
  *     method: 'GET',
  *     baseURL: `https://api.lemoncloud.io/v1/oauth`,
  *  })
@@ -110,10 +110,10 @@ export class AzureHttpRequestBuilder {
     /**
      * Executes the HTTP request.
      * @template T
-     * @returns {Promise<AxiosResponse<T>>} - Promise containing the response.
+     * @returns {Promise<HttpResponse<T>>} - Promise containing the response.
      * @throws {Error} If an error occurs during the request.
      */
-    async execute<T>(): Promise<AxiosResponse<T>> {
+    async execute<T>(): Promise<HttpResponse<T>> {
         try {
             await this.addCodeParams();
             await this.addBearerTokenToHeader();

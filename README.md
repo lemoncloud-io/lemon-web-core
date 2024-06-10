@@ -166,7 +166,7 @@ Creates an instance of `AWSWebCore` with the specified configuration.
 
 Initializes the AWSWebCore instance.
 
--   `signedRequest<T>(method: string, url: string, params?: Params, body?: Body, config?: AxiosRequestConfig): Promise<AxiosResponse<T>>`
+-   `signedRequest<T>(method: string, url: string, params?: Params, body?: Body, config?: AxiosRequestConfig): Promise<HttpResponse<T>>`
 
 Makes a signed HTTP request.
 
@@ -196,7 +196,7 @@ Creates an instance of `AzureWebCore` with the specified configuration.
 
 Initializes the AzureWebCore instance.
 
--   `signedRequest<T>(method: string, url: string, params?: Params, body?: Body, config?: AxiosRequestConfig): Promise<AxiosResponse<T>>`
+-   `signedRequest<T>(method: string, url: string, params?: Params, body?: Body, config?: AxiosRequestConfig): Promise<HttpResponse<T>>`
 
 Makes a signed HTTP request.
 
