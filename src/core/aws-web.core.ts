@@ -43,6 +43,7 @@ export class AWSWebCore implements WebCoreService {
      * @throws {Error} - Throws an error if there is no cached token.
      */
     async init(): Promise<AWSWebCoreState> {
+        await this.tokenStorage.initLemonConfig();
         const hasCachedToken = await this.tokenStorage.hasCachedToken();
         if (!hasCachedToken) {
             this.logger.warn('initialized without token!');
