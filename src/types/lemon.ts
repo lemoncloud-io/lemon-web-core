@@ -244,3 +244,18 @@ export interface TokenSignature {
      */
     originToken: LemonOAuthToken;
 }
+
+/**
+ * Represents the body of the request to change the user site.
+ */
+export interface ChangeSiteBody {
+    /**
+     * The ID of the user.
+     */
+    userId: string;
+
+    /**
+     * The ID of the site to switch to.
+     */
+    siteId: string;
+}
