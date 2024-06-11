@@ -1,3 +1,5 @@
+## [1.1.2](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.1.1...v1.1.2) (2024-06-11)
+
 ## [1.1.1](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.1.0...v1.1.1) (2024-06-11)
 
 ### Bug Fixes
