@@ -1,3 +1,9 @@
+## [1.1.1](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.1.0...v1.1.1) (2024-06-11)
+
+### Bug Fixes
+
+-   update tokenSignature to include authId ([3bf2331](https://github.com/lemoncloud-io/lemon-web-core/commit/3bf23310a31974fdbd01649977326449663d0129))
+
 # [1.1.0](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.17...v1.1.0) (2024-06-11)
 
 ### Bug Fixes
