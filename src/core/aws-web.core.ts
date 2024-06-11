@@ -43,6 +43,7 @@ export class AWSWebCore implements WebCoreService {
      * @throws {Error} - Throws an error if there is no cached token.
      */
     async init(): Promise<AWSWebCoreState> {
+        await this.tokenStorage.initLemonConfig();
         const hasCachedToken = await this.tokenStorage.hasCachedToken();
         if (!hasCachedToken) {
             this.logger.warn('initialized without token!');
@@ -70,6 +71,15 @@ export class AWSWebCore implements WebCoreService {
         this.createAWSCredentials(credential);
         this.logger.info('initialized with token!');
         return 'build';
+    }
+
+    /**
+     * Retrieves the token storage service.
+     *
+     * @returns {AWSStorageService} - The storage service that manages OAuth tokens.
+     */
+    getTokenStorage(): AWSStorageService {
+        return this.tokenStorage;
     }
 
     /**

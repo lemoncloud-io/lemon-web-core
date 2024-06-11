@@ -42,6 +42,15 @@ export class AzureWebCore implements WebCoreService {
     }
 
     /**
+     * Retrieves the token storage service.
+     *
+     * @returns {AzureStorageService} - The storage service that manages OAuth tokens.
+     */
+    getTokenStorage(): AzureStorageService {
+        return this.tokenStorage;
+    }
+
+    /**
      * Builds a request using HttpRequestBuilder without Credentials.
      * @param {AxiosRequestConfig} config - The Axios request configuration.
      * @returns {HttpRequestBuilder} - The HttpRequestBuilder instance.
