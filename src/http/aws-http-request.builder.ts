@@ -191,7 +191,7 @@ export class AWSHttpRequestBuilder {
         const hasNoHeader = isEmptyObject(header);
         if (hasNoHeader) {
             this.logger.warn('signedClient is missing => Request without signing');
-            return null;
+            return this.config.headers;
         }
         return this.addXLemonIdentityToHeader(header);
     }
@@ -204,11 +204,12 @@ export class AWSHttpRequestBuilder {
     private async addXLemonIdentityToHeader(header: any): Promise<AxiosHeaders> {
         const useXLemonIdentity = await this.tokenStorage.getItem(USE_X_LEMON_IDENTITY_KEY);
         if (!useXLemonIdentity || useXLemonIdentity === 'false') {
-            return header;
+            return { ...header, ...this.config.headers };
         }
         const identityToken = await this.tokenStorage.getItem('identityToken');
         return {
             ...header,
+            ...this.config.headers,
             'x-lemon-identity': identityToken,
         };
     }
