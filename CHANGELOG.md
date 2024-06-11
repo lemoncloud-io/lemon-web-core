@@ -1,3 +1,13 @@
+## [1.0.17](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.16...v1.0.17) (2024-06-11)
+
+### Bug Fixes
+
+-   correct the constructor of AWSStorageService ([069b4b2](https://github.com/lemoncloud-io/lemon-web-core/commit/069b4b28f14d70f9ab0b92222978fc23b0f478cf))
+
+### Features
+
+-   add getTokenStorage method to AWSWebCore and AzureWebCore ([5653596](https://github.com/lemoncloud-io/lemon-web-core/commit/5653596bfd11eed96b62bd87d80e4018fc270243))
+
 ## [1.0.16](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.15...v1.0.16) (2024-06-11)
 
 ### Features
