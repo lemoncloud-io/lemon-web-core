@@ -1,3 +1,9 @@
+## [1.0.16](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.15...v1.0.16) (2024-06-11)
+
+### Features
+
+-   add changeUserSite method to change user site ([236bcbe](https://github.com/lemoncloud-io/lemon-web-core/commit/236bcbe443b6f4dc77d9aa1d121aa480c22abc11))
+
 ## [1.0.15](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.14...v1.0.15) (2024-06-10)
 
 ### Features
