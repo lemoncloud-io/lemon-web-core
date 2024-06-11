@@ -274,20 +274,16 @@ export class AWSWebCore implements WebCoreService {
     /**
      * Changes the user site and returns new AWS credentials.
      *
-     * @param {string} authId - user authId. It same as identityId in UserProfileView
      * @param {ChangeSiteBody} changeSiteBody - The body containing site change details.
      * @param {string} [url] - Optional URL for the OAuth endpoint.
      * @returns {Promise<AWS.Credentials>} - A promise that resolves to AWS credentials.
-     * @throws Will throw an error if `authId`, `changeSiteBody`, `changeSiteBody.siteId`, or `changeSiteBody.userId` are not provided.
+     * @throws Will throw an error if `changeSiteBody`, `changeSiteBody.siteId`, or `changeSiteBody.userId` are not provided.
      *
      * @example
      * const changeSiteBody = { siteId: 'newSiteId', userId: 'userId123' };
      * const credentials = await changeUserSite(changeSiteBody);
      */
-    async changeUserSite(authId: string, changeSiteBody: ChangeSiteBody, url?: string): Promise<AWS.Credentials> {
-        if (!authId) {
-            throw new Error('@authId required');
-        }
+    async changeUserSite(changeSiteBody: ChangeSiteBody, url?: string): Promise<AWS.Credentials> {
         if (!changeSiteBody || !changeSiteBody.siteId || !changeSiteBody.userId) {
             throw new Error('@changeSiteBody required');
         }
@@ -295,7 +291,7 @@ export class AWSWebCore implements WebCoreService {
         const cached = await this.tokenStorage.getCachedOAuthToken();
         const target = `${changeSiteBody.userId}@${changeSiteBody.siteId}`;
         const tokenSignature = await this.getTokenSignature();
-        const { current, signature, originToken } = tokenSignature;
+        const { authId, current, signature, originToken } = tokenSignature;
 
         const response: HttpResponse<LemonOAuthToken> = await this.signedRequest(
             'POST',
