@@ -74,6 +74,15 @@ export class AWSWebCore implements WebCoreService {
     }
 
     /**
+     * Retrieves the token storage service.
+     *
+     * @returns {AWSStorageService} - The storage service that manages OAuth tokens.
+     */
+    getTokenStorage(): AWSStorageService {
+        return this.tokenStorage;
+    }
+
+    /**
      * Builds a request using HttpRequestBuilder without Credentials.
      * @param {AxiosRequestConfig} config - The Axios request configuration.
      * @returns {HttpRequestBuilder} - The HttpRequestBuilder instance.
