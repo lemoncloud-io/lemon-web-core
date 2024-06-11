@@ -1,6 +1,7 @@
 import {
     AWSWebCoreState,
     Body,
+    ChangeSiteBody,
     HttpResponse,
     LemonCredentials,
     LemonKMS,
@@ -257,6 +258,47 @@ export class AWSWebCore implements WebCoreService {
             identityPoolId: cached.identityPoolId,
         };
         this.logger.info('success to refresh token');
+        return await this.buildCredentialsByToken(refreshToken);
+    }
+
+    /**
+     * Changes the user site and returns new AWS credentials.
+     *
+     * @param {string} authId - user authId. It same as identityId in UserProfileView
+     * @param {ChangeSiteBody} changeSiteBody - The body containing site change details.
+     * @param {string} [url] - Optional URL for the OAuth endpoint.
+     * @returns {Promise<AWS.Credentials>} - A promise that resolves to AWS credentials.
+     * @throws Will throw an error if `authId`, `changeSiteBody`, `changeSiteBody.siteId`, or `changeSiteBody.userId` are not provided.
+     *
+     * @example
+     * const changeSiteBody = { siteId: 'newSiteId', userId: 'userId123' };
+     * const credentials = await changeUserSite(changeSiteBody);
+     */
+    async changeUserSite(authId: string, changeSiteBody: ChangeSiteBody, url?: string): Promise<AWS.Credentials> {
+        if (!authId) {
+            throw new Error('@authId required');
+        }
+        if (!changeSiteBody || !changeSiteBody.siteId || !changeSiteBody.userId) {
+            throw new Error('@changeSiteBody required');
+        }
+
+        const cached = await this.tokenStorage.getCachedOAuthToken();
+        const target = `${changeSiteBody.userId}@${changeSiteBody.siteId}`;
+        const tokenSignature = await this.getTokenSignature();
+        const { current, signature, originToken } = tokenSignature;
+
+        const response: HttpResponse<LemonOAuthToken> = await this.signedRequest(
+            'POST',
+            url ? url : `${this.config.oAuthEndpoint}/oauth/${authId}/refresh`,
+            {},
+            { current, signature, target }
+        );
+        const refreshToken = {
+            ...response.data,
+            identityToken: response.data?.identityToken || originToken.identityToken,
+            identityPoolId: cached.identityPoolId,
+        };
+        this.logger.info('success to change user site');
         return await this.buildCredentialsByToken(refreshToken);
     }
 
