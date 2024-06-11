@@ -1,3 +1,9 @@
+# [1.1.0](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.17...v1.1.0) (2024-06-11)
+
+### Bug Fixes
+
+-   **minor:** fix custom headers in AWS http request ([2190412](https://github.com/lemoncloud-io/lemon-web-core/commit/2190412c9d81208fc1da8abff6e887d44a31abad))
+
 ## [1.0.17](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.0.16...v1.0.17) (2024-06-11)
 
 ### Bug Fixes
