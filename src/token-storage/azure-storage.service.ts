@@ -1,5 +1,6 @@
 import { TokenStorageService } from './token-storage.service';
 import { LemonOAuthToken, WebCoreConfig } from '../types';
+import { convertCamelCaseFromSnake } from '../utils';
 
 /**
  * A service to manage Azure-specific storage operations.
@@ -69,7 +70,7 @@ export class AzureStorageService extends TokenStorageService {
     async getCachedOAuthToken(): Promise<LemonOAuthToken | null> {
         const result: any = await this.credentialKeys.reduce(async (promise, item) => {
             const tmp: { [key: string]: string } = await promise;
-            tmp[item] = await this.storage.getItem(`${this.prefix}.${item}`);
+            tmp[convertCamelCaseFromSnake(item)] = await this.storage.getItem(`${this.prefix}.${item}`);
             return Promise.resolve(tmp);
         }, Promise.resolve({}));
 

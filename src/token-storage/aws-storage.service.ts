@@ -1,5 +1,6 @@
 import { LemonCredentials, LemonKMS, LemonOAuthToken, WebCoreConfig } from '../types';
 import { REGION_KEY, TokenStorageService, USE_X_LEMON_IDENTITY_KEY } from './token-storage.service';
+import { convertCamelCaseFromSnake } from '../utils';
 
 export class AWSStorageService extends TokenStorageService {
     private credentialKeys = [
@@ -26,9 +27,9 @@ export class AWSStorageService extends TokenStorageService {
 
     async getAllItems() {
         return await this.credentialKeys.reduce(async (promise, item) => {
-            const tmpResult: { [key: string]: string } = await promise.then();
-            tmpResult[`${this.prefix}.${item}`] = await this.storage.getItem(`${this.prefix}.${item}`);
-            return Promise.resolve(tmpResult);
+            const result: { [key: string]: string } = await promise.then();
+            result[`${this.prefix}.${item}`] = await this.storage.getItem(`${this.prefix}.${item}`);
+            return Promise.resolve(result);
         }, Promise.resolve({}));
     }
 
@@ -56,7 +57,7 @@ export class AWSStorageService extends TokenStorageService {
     async getCachedOAuthToken(): Promise<LemonOAuthToken> {
         const result: any = await this.credentialKeys.reduce(async (promise, item) => {
             const tmp: { [key: string]: string } = await promise.then();
-            tmp[item] = await this.storage.getItem(`${this.prefix}.${item}`);
+            tmp[convertCamelCaseFromSnake(item)] = await this.storage.getItem(`${this.prefix}.${item}`);
             return Promise.resolve(tmp);
         }, Promise.resolve({}));
 

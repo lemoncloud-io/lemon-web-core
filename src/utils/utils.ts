@@ -62,3 +62,11 @@ export const calcSignature = (
     // return new Buffer(signature).toString('base64');
     return signature;
 };
+
+export const convertCamelCaseFromSnake = (key: string) => {
+    return key
+        .toLowerCase()
+        .split('_')
+        .map((part, i) => (i > 0 ? part.charAt(0).toUpperCase() + part.slice(1) : part))
+        .join('');
+};
