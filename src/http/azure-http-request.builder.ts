@@ -131,11 +131,11 @@ export class AzureHttpRequestBuilder {
      * @returns {Promise<void>} - A promise that resolves when the parameters are added.
      */
     private async addCodeParams(): Promise<void> {
-        const code = (await this.tokenStorage.getItem('hostKey')) || '';
+        const code = (await this.tokenStorage.getItem('host_key')) || '';
         if (!code) {
             return;
         }
-        const clientId = (await this.tokenStorage.getItem('clientId')) || 'default';
+        const clientId = (await this.tokenStorage.getItem('client_id')) || 'default';
         const originParams = this.config.params || {};
         this.setParams({ ...originParams, code, clientId });
     }
@@ -148,7 +148,7 @@ export class AzureHttpRequestBuilder {
      * @returns {Promise<void>} - A promise that resolves when the token is added.
      */
     private async addBearerTokenToHeader(): Promise<void> {
-        const identityToken = (await this.tokenStorage.getItem('identityToken')) || '';
+        const identityToken = (await this.tokenStorage.getItem('identity_token')) || '';
         if (!identityToken) {
             return;
         }
@@ -168,7 +168,7 @@ export class AzureHttpRequestBuilder {
         if (!useXLemonIdentity || useXLemonIdentity === 'false') {
             return;
         }
-        const identityToken = await this.tokenStorage.getItem('identityToken');
+        const identityToken = await this.tokenStorage.getItem('identity_token');
         this.addHeaders({ 'x-lemon-identity': identityToken });
     }
 }

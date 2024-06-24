@@ -8,11 +8,19 @@ export class AzureStorageService extends TokenStorageService {
     /**
      * The list of keys used to store credentials in the storage.
      */
-    private credentialKeys = ['accountId', 'authId', 'identityId', 'identityToken', 'accessToken', 'hostKey', 'expiredTime', 'clientId'];
+    private credentialKeys = [
+        'account_id',
+        'auth_id',
+        'identity_id',
+        'identity_token',
+        'access_token',
+        'host_key',
+        'expired_time',
+        'client_id',
+    ];
 
     constructor(readonly config: WebCoreConfig<'azure'>) {
         super(config);
-        this.checkShouldLowerCaseKey();
     }
 
     /**
@@ -34,10 +42,10 @@ export class AzureStorageService extends TokenStorageService {
      * @returns A boolean indicating whether a cached token exists.
      */
     async hasCachedToken(): Promise<boolean> {
-        const expiredTime = await this.storage.getItem(`${this.prefix}.expiredTime`);
-        const identityToken = await this.storage.getItem(`${this.prefix}.identityToken`);
-        const accessToken = await this.storage.getItem(`${this.prefix}.accessToken`);
-        const hostKey = await this.storage.getItem(`${this.prefix}.hostKey`);
+        const expiredTime = await this.storage.getItem(`${this.prefix}.expired_time`);
+        const identityToken = await this.storage.getItem(`${this.prefix}.identity_token`);
+        const accessToken = await this.storage.getItem(`${this.prefix}.access_token`);
+        const hostKey = await this.storage.getItem(`${this.prefix}.host_key`);
 
         return !!identityToken && !!accessToken && !!hostKey && !!expiredTime;
     }
@@ -48,7 +56,7 @@ export class AzureStorageService extends TokenStorageService {
      * @returns A boolean indicating whether the token should be refreshed.
      */
     async shouldRefreshToken(): Promise<boolean> {
-        const expiredTime = +(await this.storage.getItem(`${this.prefix}.expiredTime`));
+        const expiredTime = +(await this.storage.getItem(`${this.prefix}.expired_time`));
         const now = new Date().getTime();
         return now >= expiredTime;
     }
@@ -65,7 +73,7 @@ export class AzureStorageService extends TokenStorageService {
             return Promise.resolve(tmp);
         }, Promise.resolve({}));
 
-        const hostKey = await this.storage.getItem(`${this.prefix}.hostKey`);
+        const hostKey = await this.storage.getItem(`${this.prefix}.host_key`);
         result.credential = { HostKey: hostKey };
 
         delete result.hostKey;
@@ -83,19 +91,19 @@ export class AzureStorageService extends TokenStorageService {
         const { accountId, authId, credential, identityId, identityToken, accessToken } = token;
         const { hostKey, clientId } = credential;
 
-        this.storage.setItem(`${this.prefix}.accountId`, accountId || '');
-        this.storage.setItem(`${this.prefix}.authId`, authId || '');
-        this.storage.setItem(`${this.prefix}.identityId`, identityId || '');
-        this.storage.setItem(`${this.prefix}.identityToken`, identityToken || '');
+        this.storage.setItem(`${this.prefix}.account_id`, accountId || '');
+        this.storage.setItem(`${this.prefix}.auth_id`, authId || '');
+        this.storage.setItem(`${this.prefix}.identity_id`, identityId || '');
+        this.storage.setItem(`${this.prefix}.identity_token`, identityToken || '');
 
-        this.storage.setItem(`${this.prefix}.hostKey`, hostKey || '');
-        this.storage.setItem(`${this.prefix}.accessToken`, accessToken || '');
-        this.storage.setItem(`${this.prefix}.clientId`, clientId || 'default');
+        this.storage.setItem(`${this.prefix}.host_key`, hostKey || '');
+        this.storage.setItem(`${this.prefix}.access_token`, accessToken || '');
+        this.storage.setItem(`${this.prefix}.client_id`, clientId || 'default');
 
         // Set the expiration time for the token.
         const TIME_DELAY = 0.5; // 0.5 = 30 minutes, 1 = 1 hour
         const expiredTime = new Date().getTime() + TIME_DELAY * 60 * 60 * 1000; // 30 minutes
-        this.storage.setItem(`${this.prefix}.expiredTime`, expiredTime.toString());
+        this.storage.setItem(`${this.prefix}.expired_time`, expiredTime.toString());
 
         return;
     }
@@ -106,12 +114,5 @@ export class AzureStorageService extends TokenStorageService {
     async clearOAuthToken(): Promise<void> {
         await Promise.all(this.credentialKeys.map(item => this.storage.removeItem(`${this.prefix}.${item}`)));
         return;
-    }
-
-    private checkShouldLowerCaseKey() {
-        if (!this.useLowerCaseKey) {
-            return;
-        }
-        this.credentialKeys = [...this.credentialKeys.map(key => key.toLowerCase())];
     }
 }

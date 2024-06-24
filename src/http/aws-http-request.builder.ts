@@ -206,7 +206,7 @@ export class AWSHttpRequestBuilder {
         if (!useXLemonIdentity || useXLemonIdentity === 'false') {
             return { ...header, ...this.config.headers };
         }
-        const identityToken = await this.tokenStorage.getItem('identityToken');
+        const identityToken = await this.tokenStorage.getItem('identity_token');
         return {
             ...header,
             ...this.config.headers,
