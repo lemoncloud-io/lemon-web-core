@@ -3,16 +3,16 @@ import { REGION_KEY, TokenStorageService, USE_X_LEMON_IDENTITY_KEY } from './tok
 
 export class AWSStorageService extends TokenStorageService {
     private credentialKeys = [
-        'accountId',
-        'authId',
-        'identityId',
-        'identityPoolId',
-        'identityToken',
-        'accessKeyId',
-        'secretKey',
-        'sessionToken',
-        'expiredTime',
-        'kmsArn',
+        'account_id',
+        'auth_id',
+        'identity_id',
+        'identity_pool_id',
+        'identity_token',
+        'access_key_id',
+        'secret_key',
+        'session_token',
+        'expired_time',
+        'kms_arn',
     ];
 
     constructor(readonly config: WebCoreConfig<'aws'>) {
@@ -20,7 +20,6 @@ export class AWSStorageService extends TokenStorageService {
     }
 
     async initLemonConfig() {
-        this.checkShouldLowerCaseKey();
         await this.setItem(USE_X_LEMON_IDENTITY_KEY, 'true');
         await this.setItem(REGION_KEY, this.config.region || 'ap-northeast-2');
     }
@@ -34,23 +33,23 @@ export class AWSStorageService extends TokenStorageService {
     }
 
     async hasCachedToken(): Promise<boolean> {
-        const expiredTime = await this.storage.getItem(`${this.prefix}.expiredTime`);
-        const accessKeyId = await this.storage.getItem(`${this.prefix}.accessKeyId`);
-        const secretKey = await this.storage.getItem(`${this.prefix}.secretKey`);
+        const expiredTime = await this.storage.getItem(`${this.prefix}.expired_time`);
+        const accessKeyId = await this.storage.getItem(`${this.prefix}.access_key_id`);
+        const secretKey = await this.storage.getItem(`${this.prefix}.secret_key`);
 
         return !!accessKeyId && !!secretKey && !!expiredTime;
     }
 
     async shouldRefreshToken(): Promise<boolean> {
-        const expiredTime = +(await this.storage.getItem(`${this.prefix}.expiredTime`));
+        const expiredTime = +(await this.storage.getItem(`${this.prefix}.expired_time`));
         const now = new Date().getTime();
         return now >= expiredTime;
     }
 
     async getCachedCredentials(): Promise<LemonCredentials> {
-        const AccessKeyId = await this.storage.getItem(`${this.prefix}.accessKeyId`);
-        const SecretKey = await this.storage.getItem(`${this.prefix}.secretKey`);
-        const SessionToken = await this.storage.getItem(`${this.prefix}.sessionToken`);
+        const AccessKeyId = await this.storage.getItem(`${this.prefix}.access_key_id`);
+        const SecretKey = await this.storage.getItem(`${this.prefix}.secret_key`);
+        const SessionToken = await this.storage.getItem(`${this.prefix}.session_token`);
         return { AccessKeyId, SecretKey, SessionToken } as LemonCredentials;
     }
 
@@ -61,9 +60,9 @@ export class AWSStorageService extends TokenStorageService {
             return Promise.resolve(tmp);
         }, Promise.resolve({}));
 
-        const AccessKeyId = await this.storage.getItem(`${this.prefix}.accessKeyId`);
-        const SecretKey = await this.storage.getItem(`${this.prefix}.secretKey`);
-        const SessionToken = await this.storage.getItem(`${this.prefix}.sessionToken`);
+        const AccessKeyId = await this.storage.getItem(`${this.prefix}.access_key_id`);
+        const SecretKey = await this.storage.getItem(`${this.prefix}.secret_key`);
+        const SessionToken = await this.storage.getItem(`${this.prefix}.session_token`);
         result.credential = { AccessKeyId, SecretKey, SessionToken };
 
         delete result.accessKeyId;
@@ -80,20 +79,20 @@ export class AWSStorageService extends TokenStorageService {
         const { AccessKeyId, SecretKey, SessionToken } = credential;
 
         // save items...
-        this.storage.setItem(`${this.prefix}.accountId`, accountId || '');
-        this.storage.setItem(`${this.prefix}.authId`, authId || '');
-        this.storage.setItem(`${this.prefix}.identityId`, identityId || '');
-        this.storage.setItem(`${this.prefix}.identityToken`, identityToken || '');
+        this.storage.setItem(`${this.prefix}.account_id`, accountId || '');
+        this.storage.setItem(`${this.prefix}.auth_id`, authId || '');
+        this.storage.setItem(`${this.prefix}.identity_id`, identityId || '');
+        this.storage.setItem(`${this.prefix}.identity_token`, identityToken || '');
 
-        this.storage.setItem(`${this.prefix}.identityPoolId`, identityPoolId || '');
-        this.storage.setItem(`${this.prefix}.accessKeyId`, AccessKeyId || '');
-        this.storage.setItem(`${this.prefix}.secretKey`, SecretKey || '');
-        this.storage.setItem(`${this.prefix}.sessionToken`, SessionToken || '');
+        this.storage.setItem(`${this.prefix}.identity_pool_id`, identityPoolId || '');
+        this.storage.setItem(`${this.prefix}.access_key_id`, AccessKeyId || '');
+        this.storage.setItem(`${this.prefix}.secret_key`, SecretKey || '');
+        this.storage.setItem(`${this.prefix}.session_token`, SessionToken || '');
 
         // set expired time
         const TIME_DELAY = 0.5; // 0.5 = 30minutes, 1 = 1hour
         const expiredTime = new Date().getTime() + TIME_DELAY * 60 * 60 * 1000; // 30 minutes
-        this.storage.setItem(`${this.prefix}.expiredTime`, expiredTime.toString());
+        this.storage.setItem(`${this.prefix}.expired_time`, expiredTime.toString());
 
         return;
     }
@@ -105,14 +104,7 @@ export class AWSStorageService extends TokenStorageService {
 
     async saveKMS(kms: LemonKMS): Promise<void> {
         const kmsArn = kms.arn;
-        this.storage.setItem(`${this.prefix}.kmsArn`, kmsArn || '');
+        this.storage.setItem(`${this.prefix}.kms_arn`, kmsArn || '');
         return;
-    }
-
-    private checkShouldLowerCaseKey() {
-        if (!this.useLowerCaseKey) {
-            return;
-        }
-        this.credentialKeys = [...this.credentialKeys.map(key => key.toLowerCase())];
     }
 }
