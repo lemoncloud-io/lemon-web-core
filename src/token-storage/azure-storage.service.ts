@@ -12,6 +12,7 @@ export class AzureStorageService extends TokenStorageService {
 
     constructor(readonly config: WebCoreConfig<'azure'>) {
         super(config);
+        this.checkShouldLowerCaseKey();
     }
 
     /**
@@ -105,5 +106,12 @@ export class AzureStorageService extends TokenStorageService {
     async clearOAuthToken(): Promise<void> {
         await Promise.all(this.credentialKeys.map(item => this.storage.removeItem(`${this.prefix}.${item}`)));
         return;
+    }
+
+    private checkShouldLowerCaseKey() {
+        if (!this.useLowerCaseKey) {
+            return;
+        }
+        this.credentialKeys = [...this.credentialKeys.map(key => key.toLowerCase())];
     }
 }

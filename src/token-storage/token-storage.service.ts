@@ -12,6 +12,7 @@ export const REGION_KEY = 'region';
 export abstract class TokenStorageService {
     protected prefix: string = 'lemon';
     protected storage: Storage = new LocalStorageService();
+    protected useLowerCaseKey: boolean = false;
 
     /**
      * Constructs a TokenStorageService instance.
@@ -20,6 +21,7 @@ export abstract class TokenStorageService {
     constructor(protected readonly config: WebCoreConfig<CloudProvider>) {
         this.prefix = `@${config.project}`;
         this.storage = this.config.storage || new LocalStorageService();
+        this.useLowerCaseKey = config.useLowerCaseKey || false;
     }
 
     /**
@@ -37,6 +39,9 @@ export abstract class TokenStorageService {
      * @returns {Promise<void>} - A promise that resolves when the item is set.
      */
     async setItem(key: string, value: string): Promise<void> {
+        if (this.useLowerCaseKey) {
+            return await this.storage.setItem(`${this.prefix}.${key}`.toLowerCase(), value);
+        }
         return await this.storage.setItem(`${this.prefix}.${key}`, value);
     }
 
@@ -46,6 +51,9 @@ export abstract class TokenStorageService {
      * @returns {Promise<string>} - A promise that resolves to the value of the item.
      */
     async getItem(key: string): Promise<string> {
+        if (this.useLowerCaseKey) {
+            return await this.storage.getItem(`${this.prefix}.${key}`.toLowerCase());
+        }
         return await this.storage.getItem(`${this.prefix}.${key}`);
     }
 
