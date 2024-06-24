@@ -1,3 +1,9 @@
+## [1.2.1](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.0...v1.2.1) (2024-06-24)
+
+### Features
+
+-   add convertCamelCaseFromSnake util ([bc4ec51](https://github.com/lemoncloud-io/lemon-web-core/commit/bc4ec5124ed114174b4754cde1ba9fb30f79b686))
+
 # [1.2.0](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.1.3...v1.2.0) (2024-06-24)
 
 ### Features
