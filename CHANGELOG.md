@@ -1,3 +1,9 @@
+# [1.2.0](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.1.3...v1.2.0) (2024-06-24)
+
+### Features
+
+-   **minor:** rollback code and use snakecase ([ef3ee33](https://github.com/lemoncloud-io/lemon-web-core/commit/ef3ee332bbbebf7605fd2c519a3eeea30ac72608))
+
 ## [1.1.3](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.1.2...v1.1.3) (2024-06-24)
 
 ### Features
