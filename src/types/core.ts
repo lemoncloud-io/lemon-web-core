@@ -52,6 +52,7 @@ export type WebCoreConfig<T extends CloudProvider> = {
     oAuthEndpoint: string;
     region?: string;
     storage?: Storage;
+    useLowerCaseKey?: boolean;
 };
 
 /**

@@ -20,6 +20,7 @@ export class AWSStorageService extends TokenStorageService {
     }
 
     async initLemonConfig() {
+        this.checkShouldLowerCaseKey();
         await this.setItem(USE_X_LEMON_IDENTITY_KEY, 'true');
         await this.setItem(REGION_KEY, this.config.region || 'ap-northeast-2');
     }
@@ -106,5 +107,12 @@ export class AWSStorageService extends TokenStorageService {
         const kmsArn = kms.arn;
         this.storage.setItem(`${this.prefix}.kmsArn`, kmsArn || '');
         return;
+    }
+
+    private checkShouldLowerCaseKey() {
+        if (!this.useLowerCaseKey) {
+            return;
+        }
+        this.credentialKeys = [...this.credentialKeys.map(key => key.toLowerCase())];
     }
 }
