@@ -52,7 +52,7 @@ export const calcSignature = (
     const authId = payload.authId || '';
     const accountId = payload.accountId || '';
     const identityId = payload.identityId || '';
-    const identityToken = '';
+    const identityToken = payload.identityToken || '';
 
     //! build payload to sign......
     const data = [current, accountId, identityId, identityToken, userAgent].join('&');
