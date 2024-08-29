@@ -52,7 +52,7 @@ export const calcSignature = (
     const authId = payload.authId || '';
     const accountId = payload.accountId || '';
     const identityId = payload.identityId || '';
-    const identityToken = payload.identityToken || '';
+    const identityToken = '';
 
     //! build payload to sign......
     const data = [current, accountId, identityId, identityToken, userAgent].join('&');
@@ -69,4 +69,24 @@ export const convertCamelCaseFromSnake = (key: string) => {
         .split('_')
         .map((part, i) => (i > 0 ? part.charAt(0).toUpperCase() + part.slice(1) : part))
         .join('');
+};
+
+// NOTE: for native login test
+export const calcTestSignature = (
+    payload: SignaturePayload,
+    current: string = new Date().toISOString(),
+    userAgent: string = navigator.userAgent
+) => {
+    const authId = payload.authId || '';
+    const accountId = payload.accountId || '';
+    const identityId = payload.identityId || '';
+    const identityToken = payload.identityToken || '';
+
+    //! build payload to sign......
+    const data = [current, accountId, identityId, identityToken, userAgent].join('&');
+    //! make signature with auth-id
+    const signature = hmac(hmac(hmac(data, authId), accountId), identityId);
+    //! returns signature..........
+    // return new Buffer(signature).toString('base64');
+    return signature;
 };
