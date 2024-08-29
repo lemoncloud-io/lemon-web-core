@@ -1,3 +1,9 @@
+## [1.2.3](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.2...v1.2.3) (2024-08-29)
+
+### Features
+
+-   add calcTestSignature function for native login tests ([cefd969](https://github.com/lemoncloud-io/lemon-web-core/commit/cefd9695b0db93288112ddd527a87fcc398e4a1e))
+
 ## [1.2.2](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.1...v1.2.2) (2024-08-29)
 
 ### Bug Fixes
