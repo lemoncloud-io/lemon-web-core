@@ -1,3 +1,9 @@
+## [1.2.2](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.1...v1.2.2) (2024-08-29)
+
+### Bug Fixes
+
+-   fix missing identityToken in signature calculation ([f1cc9a4](https://github.com/lemoncloud-io/lemon-web-core/commit/f1cc9a408a9eadce9346158effe549cca41dcca8))
+
 ## [1.2.1](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.0...v1.2.1) (2024-06-24)
 
 ### Features
