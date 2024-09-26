@@ -1,3 +1,9 @@
+## [1.2.4](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.3...v1.2.4) (2024-09-26)
+
+### Features
+
+-   add refreshCachedTokenV2 method ([f0ffb7e](https://github.com/lemoncloud-io/lemon-web-core/commit/f0ffb7ee6a4348a83afde491abe3fffb8e2b76d6))
+
 ## [1.2.3](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.2...v1.2.3) (2024-08-29)
 
 ### Features
