@@ -272,6 +272,43 @@ export class AWSWebCore implements WebCoreService {
     }
 
     /**
+     * Refreshes the cached token new version
+     * @param {string} [domain=''] - The domain for the refresh request.
+     * @param {string} [url=''] - The request url for refresh token
+     * @returns {Promise<AWS.Credentials | null>} - The AWS credentials or null if refresh fails.
+     */
+    async refreshCachedTokenV2(domain: string = '', url: string = '') {
+        const cached = await this.tokenStorage.getCachedOAuthToken();
+        const payload = {
+            authId: cached.authId,
+            accountId: cached.accountId,
+            identityId: cached.identityId,
+            identityToken: cached.identityToken,
+        };
+        const current = new Date().toISOString();
+        const signature = calcSignature(payload, current);
+
+        let body: RefreshTokenBody = { current, signature };
+        if (domain && domain.length > 0) {
+            body = { ...body, domain };
+        }
+
+        const response: HttpResponse<any> = await this.signedRequest(
+            'POST',
+            url ? url : `${this.config.oAuthEndpoint}/oauth/${cached.authId}/refresh`,
+            {},
+            { ...body }
+        );
+        const refreshToken = {
+            ...response.data.Token,
+            identityToken: response.data.Token?.identityToken || cached.identityToken,
+            identityPoolId: cached.identityPoolId,
+        };
+        this.logger.info('success to refresh token');
+        return await this.buildCredentialsByToken(refreshToken);
+    }
+
+    /**
      * Changes the user site and returns new AWS credentials.
      *
      * @param {ChangeSiteBody} changeSiteBody - The body containing site change details.
