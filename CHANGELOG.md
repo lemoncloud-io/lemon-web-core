@@ -1,3 +1,9 @@
+## [1.2.5](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.4...v1.2.5) (2024-09-30)
+
+### Features
+
+-   refresh token logic improvement ([60bc4de](https://github.com/lemoncloud-io/lemon-web-core/commit/60bc4de5d1fc8f150447fb99b342b81eff0ebcc2))
+
 ## [1.2.4](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.3...v1.2.4) (2024-09-26)
 
 ### Features
