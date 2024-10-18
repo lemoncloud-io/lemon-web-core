@@ -51,6 +51,10 @@ export interface LemonOAuthToken {
      * The access token associated with the token (optional).
      */
     accessToken?: string;
+    /**
+     * The access token associated with the token (optional).
+     */
+    Token?: LemonOAuthToken;
 }
 
 /**
