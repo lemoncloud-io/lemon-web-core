@@ -1,3 +1,9 @@
+## [1.2.6](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.5...v1.2.6) (2024-10-18)
+
+### Bug Fixes
+
+-   handle legacy token format ([4eed50c](https://github.com/lemoncloud-io/lemon-web-core/commit/4eed50c554a67eaa545ca6db37a95943b7ae265a))
+
 ## [1.2.5](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.4...v1.2.5) (2024-09-30)
 
 ### Features
