@@ -1,3 +1,13 @@
+## [1.2.7](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.6...v1.2.7) (2025-02-17)
+
+### Bug Fixes
+
+-   correct description for language header ([78f7762](https://github.com/lemoncloud-io/lemon-web-core/commit/78f776241990ba9e6d4a8644ceffda4d352af0b7))
+
+### Features
+
+-   add support for x-lemon-language header ([c907435](https://github.com/lemoncloud-io/lemon-web-core/commit/c90743598e8ce9408bcecb7324cfa8b54bb14626))
+
 ## [1.2.6](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.5...v1.2.6) (2024-10-18)
 
 ### Bug Fixes
