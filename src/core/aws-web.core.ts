@@ -365,7 +365,7 @@ export class AWSWebCore implements WebCoreService {
 
     /**
      * Sets whether to use the X-Lemon-Language header with a specific key.
-     * @param {boolean} use - Whether to use the X-Lemon-Storage header.
+     * @param {boolean} use - Whether to use the X-Lemon-Language header.
      * @param {string} key? - The storage key to set.
      */
     async setUseXLemonLanguage(use: boolean, key?: string): Promise<void> {
