@@ -1,6 +1,6 @@
 import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig } from 'axios';
 import { Body, Headers, HttpRequestData, HttpResponse, Params } from '../types';
-import { AWSStorageService, REGION_KEY, USE_X_LEMON_IDENTITY_KEY, USE_X_LEMON_STORAGE_KEY } from '../token-storage';
+import { AWSStorageService, REGION_KEY, USE_X_LEMON_IDENTITY_KEY, USE_X_LEMON_LANGUAGE_KEY } from '../token-storage';
 import AWS from 'aws-sdk/global.js';
 import { sigV4Client } from '../vendor';
 import { isEmptyObject, LoggerService } from '../utils';
@@ -223,8 +223,8 @@ export class AWSHttpRequestBuilder {
      */
     private async addXLemonLanguageToHeader(header: any): Promise<AxiosHeaders> {
         const [languageKey, language] = await Promise.all([
-            this.tokenStorage.getItem(USE_X_LEMON_STORAGE_KEY),
-            this.tokenStorage.getItem((await this.tokenStorage.getItem(USE_X_LEMON_STORAGE_KEY)) || ''),
+            this.tokenStorage.getItem(USE_X_LEMON_LANGUAGE_KEY),
+            this.tokenStorage.getItem((await this.tokenStorage.getItem(USE_X_LEMON_LANGUAGE_KEY)) || ''),
         ]);
 
         return {

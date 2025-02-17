@@ -2,7 +2,7 @@ import { CloudProvider, Storage, WebCoreConfig } from '../types';
 import { LocalStorageService } from '../utils';
 
 export const USE_X_LEMON_IDENTITY_KEY = 'use_x_lemon_identity_key';
-export const USE_X_LEMON_STORAGE_KEY = 'use_x_lemon_storage_key';
+export const USE_X_LEMON_LANGUAGE_KEY = 'use_x_lemon_language_key';
 export const REGION_KEY = 'region';
 
 /**

@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { Body, Headers, HttpResponse, Params } from '../types';
-import { AzureStorageService, USE_X_LEMON_IDENTITY_KEY, USE_X_LEMON_STORAGE_KEY } from '../token-storage';
+import { AzureStorageService, USE_X_LEMON_IDENTITY_KEY, USE_X_LEMON_LANGUAGE_KEY } from '../token-storage';
 
 /**
  * Class to build and execute HTTP requests with AWS signing
@@ -182,7 +182,7 @@ export class AzureHttpRequestBuilder {
      * @returns {Promise<void>} - A promise that resolves when the language header is added.
      */
     private async addXLemonLanguageToHeader(): Promise<void> {
-        const languageKey = await this.tokenStorage.getItem(USE_X_LEMON_STORAGE_KEY);
+        const languageKey = await this.tokenStorage.getItem(USE_X_LEMON_LANGUAGE_KEY);
         if (!languageKey) {
             return;
         }

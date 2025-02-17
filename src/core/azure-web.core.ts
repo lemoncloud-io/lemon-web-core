@@ -1,5 +1,5 @@
 import { AzureWebCoreState, Body, HttpResponse, LemonOAuthToken, Params, WebCoreConfig, WebCoreService } from '../types';
-import { AzureStorageService, USE_X_LEMON_IDENTITY_KEY, USE_X_LEMON_STORAGE_KEY } from '../token-storage';
+import { AzureStorageService, USE_X_LEMON_IDENTITY_KEY, USE_X_LEMON_LANGUAGE_KEY } from '../token-storage';
 import { LoggerService } from '../utils';
 import { AxiosRequestConfig } from 'axios';
 import { AzureHttpRequestBuilder, HttpRequestBuilder } from '../http';
@@ -179,14 +179,14 @@ export class AzureWebCore implements WebCoreService {
     }
 
     /**
-     * Sets whether to use the X-Lemon-Storage header with a specific key.
-     * @param {boolean} use - Whether to use the X-Lemon-Storage header.
+     * Sets whether to use the X-Lemon-Language header with a specific key.
+     * @param {boolean} use - Whether to use the X-Lemon-Language header.
      * @param {string} key? - The storage key to set.
      */
-    async setUseXLemonStorage(use: boolean, key?: string): Promise<void> {
+    async setUseXLemonLanguage(use: boolean, key?: string): Promise<void> {
         if (!use || !key) {
             return;
         }
-        await this.tokenStorage.setItem(USE_X_LEMON_STORAGE_KEY, key);
+        await this.tokenStorage.setItem(USE_X_LEMON_LANGUAGE_KEY, key);
     }
 }

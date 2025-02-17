@@ -33,7 +33,7 @@ export interface WebCoreService {
      * @param {boolean} use - Whether to use X-Lemon-Language.
      * @param {string} key? - language key name of local storage
      */
-    setUseXLemonStorage(use: boolean, key?: string): void;
+    setUseXLemonLanguage(use: boolean, key?: string): void;
 }
 
 /**
