@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { Body, Headers, HttpResponse, Params } from '../types';
-import { AzureStorageService, USE_X_LEMON_IDENTITY_KEY } from '../token-storage';
+import { AzureStorageService, USE_X_LEMON_IDENTITY_KEY, USE_X_LEMON_STORAGE_KEY } from '../token-storage';
 
 /**
  * Class to build and execute HTTP requests with AWS signing
@@ -118,6 +118,7 @@ export class AzureHttpRequestBuilder {
             await this.addCodeParams();
             await this.addBearerTokenToHeader();
             await this.addXLemonIdentityToHeader();
+            await this.addXLemonLanguageToHeader();
             return await this.axiosInstance.request<T>(this.config);
         } catch (error) {
             throw error;
@@ -170,5 +171,27 @@ export class AzureHttpRequestBuilder {
         }
         const identityToken = await this.tokenStorage.getItem('identity_token');
         this.addHeaders({ 'x-lemon-identity': identityToken });
+    }
+
+    /**
+     * Adds the x-lemon-language header to the request if required.
+     * First checks if a language key is set in storage, then retrieves the corresponding language value.
+     * If both exist, adds the language as 'x-lemon-language' header.
+     * @private
+     * @async
+     * @returns {Promise<void>} - A promise that resolves when the language header is added.
+     */
+    private async addXLemonLanguageToHeader(): Promise<void> {
+        const languageKey = await this.tokenStorage.getItem(USE_X_LEMON_STORAGE_KEY);
+        if (!languageKey) {
+            return;
+        }
+
+        const language = await this.tokenStorage.getItem(languageKey);
+        if (!language) {
+            return;
+        }
+
+        this.addHeaders({ 'x-lemon-language': language });
     }
 }

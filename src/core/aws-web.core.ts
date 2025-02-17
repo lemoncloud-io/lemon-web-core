@@ -12,7 +12,7 @@ import {
     WebCoreConfig,
     WebCoreService,
 } from '../types';
-import { AWSStorageService, USE_X_LEMON_IDENTITY_KEY } from '../token-storage';
+import { AWSStorageService, USE_X_LEMON_IDENTITY_KEY, USE_X_LEMON_STORAGE_KEY } from '../token-storage';
 import { calcSignature, LoggerService } from '../utils';
 import { AxiosRequestConfig } from 'axios';
 import { AWSHttpRequestBuilder, HttpRequestBuilder } from '../http';
@@ -361,6 +361,18 @@ export class AWSWebCore implements WebCoreService {
      */
     async setUseXLemonIdentity(use: boolean): Promise<void> {
         await this.tokenStorage.setItem(USE_X_LEMON_IDENTITY_KEY, `${use}`);
+    }
+
+    /**
+     * Sets whether to use the X-Lemon-Storage header with a specific key.
+     * @param {boolean} use - Whether to use the X-Lemon-Storage header.
+     * @param {string} key? - The storage key to set.
+     */
+    async setUseXLemonStorage(use: boolean, key?: string): Promise<void> {
+        if (!use || !key) {
+            return;
+        }
+        await this.tokenStorage.setItem(USE_X_LEMON_STORAGE_KEY, key);
     }
 
     /**
