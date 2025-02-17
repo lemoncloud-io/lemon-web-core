@@ -1,6 +1,6 @@
 import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig } from 'axios';
 import { Body, Headers, HttpRequestData, HttpResponse, Params } from '../types';
-import { AWSStorageService, REGION_KEY, USE_X_LEMON_IDENTITY_KEY } from '../token-storage';
+import { AWSStorageService, REGION_KEY, USE_X_LEMON_IDENTITY_KEY, USE_X_LEMON_LANGUAGE_KEY } from '../token-storage';
 import AWS from 'aws-sdk/global.js';
 import { sigV4Client } from '../vendor';
 import { isEmptyObject, LoggerService } from '../utils';
@@ -193,7 +193,9 @@ export class AWSHttpRequestBuilder {
             this.logger.warn('signedClient is missing => Request without signing');
             return this.config.headers;
         }
-        return this.addXLemonIdentityToHeader(header);
+
+        const headerWithIdentity = await this.addXLemonIdentityToHeader(header);
+        return await this.addXLemonLanguageToHeader(headerWithIdentity);
     }
 
     /**
@@ -211,6 +213,24 @@ export class AWSHttpRequestBuilder {
             ...header,
             ...this.config.headers,
             'x-lemon-identity': identityToken,
+        };
+    }
+
+    /**
+     * Adds x-lemon-language to the header.
+     * @param header The header to be added
+     * @returns The header with x-lemon-language added
+     */
+    private async addXLemonLanguageToHeader(header: any): Promise<AxiosHeaders> {
+        const [languageKey, language] = await Promise.all([
+            this.tokenStorage.getItem(USE_X_LEMON_LANGUAGE_KEY),
+            this.tokenStorage.getItem((await this.tokenStorage.getItem(USE_X_LEMON_LANGUAGE_KEY)) || ''),
+        ]);
+
+        return {
+            ...header,
+            ...this.config.headers,
+            ...(languageKey && language && { 'x-lemon-language': language }),
         };
     }
 

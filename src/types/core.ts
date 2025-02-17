@@ -27,6 +27,13 @@ export interface WebCoreService {
      * @param {boolean} use - Whether to use X-Lemon-Identity.
      */
     setUseXLemonIdentity(use: boolean): void;
+
+    /**
+     * Sets the use of X-Lemon-Language.
+     * @param {boolean} use - Whether to use X-Lemon-Language.
+     * @param {string} key? - language key name of local storage
+     */
+    setUseXLemonLanguage(use: boolean, key?: string): void;
 }
 
 /**
