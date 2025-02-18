@@ -184,7 +184,11 @@ export class AzureWebCore implements WebCoreService {
      * @param {string} key? - The storage key to set.
      */
     async setUseXLemonLanguage(use: boolean, key?: string): Promise<void> {
-        if (!use || !key) {
+        if (!use) {
+            await this.tokenStorage.setItem(USE_X_LEMON_LANGUAGE_KEY, '');
+            return;
+        }
+        if (!key) {
             return;
         }
         await this.tokenStorage.setItem(USE_X_LEMON_LANGUAGE_KEY, key);
