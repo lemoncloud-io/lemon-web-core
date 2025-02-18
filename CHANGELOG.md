@@ -1,3 +1,9 @@
+## [1.2.8](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.7...v1.2.8) (2025-02-18)
+
+### Bug Fixes
+
+-   clear language key when use is false ([b20d69a](https://github.com/lemoncloud-io/lemon-web-core/commit/b20d69afc375d74b342b14d9dd6a1c1db6a891c7))
+
 ## [1.2.7](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.6...v1.2.7) (2025-02-17)
 
 ### Bug Fixes

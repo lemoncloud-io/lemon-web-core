@@ -1,6 +1,6 @@
 {
     "name": "@lemoncloud/lemon-web-core",
-    "version": "1.2.7",
+    "version": "1.2.8",
     "description": "Core Web-based Library for signing request at LEMONCLOUD",
     "repository": "lemoncloud-io/lemon-web-core",
     "exports": "./dist/index.js",
