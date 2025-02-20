@@ -1,7 +1,7 @@
 import { AzureWebCoreState, Body, HttpResponse, LemonOAuthToken, Params, WebCoreConfig, WebCoreService } from '../types';
 import { AzureStorageService, USE_X_LEMON_IDENTITY_KEY, USE_X_LEMON_LANGUAGE_KEY } from '../token-storage';
 import { LoggerService } from '../utils';
-import { AxiosRequestConfig } from 'axios';
+import { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { AzureHttpRequestBuilder, HttpRequestBuilder } from '../http';
 
 /**
@@ -192,5 +192,14 @@ export class AzureWebCore implements WebCoreService {
             return;
         }
         await this.tokenStorage.setItem(USE_X_LEMON_LANGUAGE_KEY, key);
+    }
+
+    /**
+     * Gets the axios instance for the given configuration
+     * @param config The axios request configuration
+     * @returns The axios instance
+     */
+    getAxiosInstance(config: AxiosRequestConfig): AxiosInstance {
+        return this.buildSignedRequest(config).getAxiosInstance();
     }
 }

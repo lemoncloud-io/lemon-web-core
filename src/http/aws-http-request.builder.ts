@@ -255,4 +255,12 @@ export class AWSHttpRequestBuilder {
         hostname = hostname.split('?')[0];
         return hostname;
     }
+
+    /**
+     * Gets the axios instance used by this builder
+     * @returns {AxiosInstance} The axios instance
+     */
+    getAxiosInstance(): AxiosInstance {
+        return this.axiosInstance;
+    }
 }

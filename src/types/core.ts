@@ -1,3 +1,4 @@
+import { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { AWSWebCore, AzureWebCore } from '../core';
 
 /**
@@ -34,6 +35,13 @@ export interface WebCoreService {
      * @param {string} key? - language key name of local storage
      */
     setUseXLemonLanguage(use: boolean, key?: string): void;
+
+    /**
+     * Gets the axios instance for the given configuration
+     * @param config The axios request configuration
+     * @returns The axios instance
+     */
+    getAxiosInstance(config: AxiosRequestConfig): AxiosInstance;
 }
 
 /**

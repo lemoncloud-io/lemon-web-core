@@ -14,7 +14,7 @@ import {
 } from '../types';
 import { AWSStorageService, USE_X_LEMON_IDENTITY_KEY, USE_X_LEMON_LANGUAGE_KEY } from '../token-storage';
 import { calcSignature, LoggerService } from '../utils';
-import { AxiosRequestConfig } from 'axios';
+import { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { AWSHttpRequestBuilder, HttpRequestBuilder } from '../http';
 import AWS from 'aws-sdk/global.js';
 
@@ -430,6 +430,15 @@ export class AWSWebCore implements WebCoreService {
         }
 
         return await this.getCurrentCredentials();
+    }
+
+    /**
+     * Gets the axios instance for the given configuration
+     * @param config The axios request configuration
+     * @returns The axios instance
+     */
+    getAxiosInstance(config: AxiosRequestConfig): AxiosInstance {
+        return this.buildSignedRequest(config).getAxiosInstance();
     }
 
     /**

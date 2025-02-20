@@ -194,4 +194,12 @@ export class AzureHttpRequestBuilder {
 
         this.addHeaders({ 'x-lemon-language': language });
     }
+
+    /**
+     * Gets the axios instance used by this builder
+     * @returns {AxiosInstance} The axios instance
+     */
+    getAxiosInstance(): AxiosInstance {
+        return this.axiosInstance;
+    }
 }
