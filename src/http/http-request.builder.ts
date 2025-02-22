@@ -26,10 +26,11 @@ export class HttpRequestBuilder {
     /**
      * @constructor
      * @param {AxiosRequestConfig} [config={}] - Initial configuration
+     * @param {AxiosInstance} - Axios Instance
      * @throws {Error} If the method is not defined
      * @throws {Error} If the baseURL is not defined
      */
-    constructor(config: AxiosRequestConfig) {
+    constructor(config: AxiosRequestConfig, axiosInstance?: AxiosInstance) {
         if (!config.method) {
             throw new Error('method should be defined!');
         }
@@ -37,7 +38,7 @@ export class HttpRequestBuilder {
             throw new Error('baseURL should be defined!');
         }
         this.config = { ...this.config, ...config };
-        this.axiosInstance = axios.create(this.config);
+        this.axiosInstance = axiosInstance || axios.create(config);
     }
 
     /**

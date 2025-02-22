@@ -216,6 +216,53 @@ Logs the user out by clearing the OAuth token.
 
 Sets whether to use the x-lemon-identity header.
 
+## Axios Instance Management
+
+The WebCore provides a shared Axios instance management feature. This allows you to configure a single Axios instance that can be reused across multiple requests, which is particularly useful for setting up global interceptors or common configurations.
+
+### Getting the Shared Axios Instance
+
+```typescript
+const webCore = WebCoreFactory.create({ cloud: 'aws', ... });
+const axiosInstance = webCore.getSharedAxiosInstance();
+```
+
+### Setting Up Interceptors
+
+```typescript
+// Request Interceptor
+webCore.getSharedAxiosInstance().interceptors.request.use(config => {
+    // Add custom headers or modify request config
+    return config;
+});
+
+// Response Interceptor
+webCore.getSharedAxiosInstance().interceptors.response.use(response => {
+    // Process response data
+    return response;
+});
+```
+
+### Usage with Builders
+
+The shared Axios instance is automatically used when creating request builders:
+
+```typescript
+// Using with regular request builder
+const request = webCore.buildRequest({
+    method: 'GET',
+    baseURL: 'https://api.example.com',
+});
+
+// Using with AWS signed request builder
+const signedRequest = webCore.buildSignedRequest({
+    method: 'GET',
+    baseURL: 'https://api.example.com',
+});
+```
+
+Both builders will use the same shared Axios instance, ensuring that any global configurations or interceptors are consistently applied across all requests.
+
 ## Troubleshooting
 
 Please follow this guidelines when reporting bugs and feature requests:

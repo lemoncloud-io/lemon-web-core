@@ -32,11 +32,13 @@ export class AWSHttpRequestBuilder {
      * Creates an instance of AWSHttpRequestBuilder.
      * @param {AWSStorageService} tokenStorage - The AWS storage service for token management.
      * @param {AxiosRequestConfig} config - The Axios request configuration.
+     * @param {AxiosInstance} axiosInstance - The Axios instance.
      * @throws {Error} If tokenStorage, method, or baseURL are not defined.
      */
     constructor(
         private readonly tokenStorage: AWSStorageService,
-        config: AxiosRequestConfig
+        config: AxiosRequestConfig,
+        axiosInstance?: AxiosInstance
     ) {
         if (!tokenStorage) {
             throw new Error('tokenStorage should be defined!');
@@ -48,7 +50,7 @@ export class AWSHttpRequestBuilder {
             throw new Error('baseURL should be defined!');
         }
         this.config = { ...this.config, ...config };
-        this.axiosInstance = axios.create(this.config);
+        this.axiosInstance = axiosInstance || axios.create(this.config);
         this.logger = new LoggerService('AWSHttpBuilder');
     }
 

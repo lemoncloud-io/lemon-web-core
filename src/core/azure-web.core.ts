@@ -1,7 +1,7 @@
 import { AzureWebCoreState, Body, HttpResponse, LemonOAuthToken, Params, WebCoreConfig, WebCoreService } from '../types';
 import { AzureStorageService, USE_X_LEMON_IDENTITY_KEY, USE_X_LEMON_LANGUAGE_KEY } from '../token-storage';
 import { LoggerService } from '../utils';
-import { AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { AzureHttpRequestBuilder, HttpRequestBuilder } from '../http';
 
 /**
@@ -11,6 +11,7 @@ import { AzureHttpRequestBuilder, HttpRequestBuilder } from '../http';
 export class AzureWebCore implements WebCoreService {
     private readonly tokenStorage: AzureStorageService;
     private readonly logger: LoggerService;
+    private sharedAxiosInstance: AxiosInstance;
 
     /**
      * Creates an instance of AzureWebCore.
@@ -19,6 +20,7 @@ export class AzureWebCore implements WebCoreService {
     constructor(private readonly config: WebCoreConfig<'azure'>) {
         this.logger = new LoggerService('AzureCore');
         this.tokenStorage = new AzureStorageService(this.config);
+        this.sharedAxiosInstance = axios.create();
     }
 
     /**
@@ -51,12 +53,20 @@ export class AzureWebCore implements WebCoreService {
     }
 
     /**
+     * Gets the shared axios instance
+     * @returns The shared axios instance
+     */
+    getSharedAxiosInstance(): AxiosInstance {
+        return this.sharedAxiosInstance;
+    }
+
+    /**
      * Builds a request using HttpRequestBuilder without Credentials.
      * @param {AxiosRequestConfig} config - The Axios request configuration.
      * @returns {HttpRequestBuilder} - The HttpRequestBuilder instance.
      */
     buildRequest(config: AxiosRequestConfig): HttpRequestBuilder {
-        return new HttpRequestBuilder(config);
+        return new HttpRequestBuilder(config, this.sharedAxiosInstance);
     }
 
     /**
