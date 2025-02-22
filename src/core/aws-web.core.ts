@@ -14,7 +14,7 @@ import {
 } from '../types';
 import { AWSStorageService, USE_X_LEMON_IDENTITY_KEY, USE_X_LEMON_LANGUAGE_KEY } from '../token-storage';
 import { calcSignature, LoggerService } from '../utils';
-import { AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { AWSHttpRequestBuilder, HttpRequestBuilder } from '../http';
 import AWS from 'aws-sdk/global.js';
 
@@ -24,6 +24,7 @@ import AWS from 'aws-sdk/global.js';
 export class AWSWebCore implements WebCoreService {
     private readonly tokenStorage: AWSStorageService;
     private readonly logger: LoggerService;
+    private sharedAxiosInstance: AxiosInstance;
 
     /**
      * Creates an instance of AWSWebCore.
@@ -32,6 +33,14 @@ export class AWSWebCore implements WebCoreService {
     constructor(private readonly config: WebCoreConfig<'aws'>) {
         this.logger = new LoggerService('AWSCore');
         this.tokenStorage = new AWSStorageService(this.config);
+        this.sharedAxiosInstance = axios.create();
+    }
+    /**
+     * Gets the shared axios instance
+     * @returns The shared axios instance
+     */
+    getSharedAxiosInstance(): AxiosInstance {
+        return this.sharedAxiosInstance;
     }
 
     /**
@@ -88,7 +97,7 @@ export class AWSWebCore implements WebCoreService {
      * @returns {HttpRequestBuilder} - The HttpRequestBuilder instance.
      */
     buildRequest(config: AxiosRequestConfig): HttpRequestBuilder {
-        return new HttpRequestBuilder(config);
+        return new HttpRequestBuilder(config, this.sharedAxiosInstance);
     }
 
     /**
@@ -122,7 +131,7 @@ export class AWSWebCore implements WebCoreService {
      * @returns {AWSHttpRequestBuilder} - The AWSHttpRequestBuilder instance.
      */
     buildSignedRequest(config: AxiosRequestConfig): AWSHttpRequestBuilder {
-        return new AWSHttpRequestBuilder(this.tokenStorage, config);
+        return new AWSHttpRequestBuilder(this.tokenStorage, config, this.sharedAxiosInstance);
     }
 
     /**

@@ -1,3 +1,4 @@
+import { AxiosInstance } from 'axios';
 import { AWSWebCore, AzureWebCore } from '../core';
 
 /**
@@ -34,6 +35,12 @@ export interface WebCoreService {
      * @param {string} key? - language key name of local storage
      */
     setUseXLemonLanguage(use: boolean, key?: string): void;
+
+    /**
+     * Gets the shared axios instance
+     * @returns The shared axios instance
+     */
+    getSharedAxiosInstance(): AxiosInstance;
 }
 
 /**
