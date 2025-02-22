@@ -35,6 +35,7 @@ export class AWSWebCore implements WebCoreService {
         this.tokenStorage = new AWSStorageService(this.config);
         this.sharedAxiosInstance = axios.create();
     }
+
     /**
      * Gets the shared axios instance
      * @returns The shared axios instance
