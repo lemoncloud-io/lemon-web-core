@@ -1,3 +1,9 @@
+## [1.2.9](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.8...v1.2.9) (2025-02-22)
+
+### Features
+
+-   add shared axios instance to WebCore ([3a43bf5](https://github.com/lemoncloud-io/lemon-web-core/commit/3a43bf5d20be425a83d2ce1c852ce32d8bd93631))
+
 ## [1.2.8](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.7...v1.2.8) (2025-02-18)
 
 ### Bug Fixes
