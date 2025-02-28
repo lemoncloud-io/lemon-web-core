@@ -252,6 +252,10 @@ export class AWSWebCore implements WebCoreService {
      */
     async refreshCachedToken(domain: string = '', url: string = '') {
         const cached = await this.tokenStorage.getCachedOAuthToken();
+        if (!cached.authId) {
+            throw new Error('authId is required for token refresh');
+        }
+
         const payload = {
             authId: cached.authId,
             accountId: cached.accountId,
@@ -289,6 +293,10 @@ export class AWSWebCore implements WebCoreService {
      */
     async refreshCachedTokenV2(domain: string = '', url: string = '') {
         const cached = await this.tokenStorage.getCachedOAuthToken();
+        if (!cached.authId) {
+            throw new Error('authId is required for token refresh');
+        }
+
         const payload = {
             authId: cached.authId,
             accountId: cached.accountId,
@@ -339,6 +347,9 @@ export class AWSWebCore implements WebCoreService {
         const target = `${changeSiteBody.userId}@${changeSiteBody.siteId}`;
         const tokenSignature = await this.getTokenSignature();
         const { authId, current, signature, originToken } = tokenSignature;
+        if (!authId) {
+            throw new Error('authId is required for token refresh');
+        }
 
         const response: HttpResponse<LemonOAuthToken> = await this.signedRequest(
             'POST',
