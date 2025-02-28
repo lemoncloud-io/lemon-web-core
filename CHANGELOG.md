@@ -1,3 +1,9 @@
+## [1.2.10](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.9...v1.2.10) (2025-02-28)
+
+### Features
+
+-   validate authId before token refresh ([90fdd07](https://github.com/lemoncloud-io/lemon-web-core/commit/90fdd073137f1f052ddd67d5dc3e6a5495b5a2ec))
+
 ## [1.2.9](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.8...v1.2.9) (2025-02-22)
 
 ### Features
