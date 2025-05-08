@@ -1,3 +1,9 @@
+## [1.2.11](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.10...v1.2.11) (2025-05-08)
+
+### Features
+
+-   check for identity token existence ([8a0dcb0](https://github.com/lemoncloud-io/lemon-web-core/commit/8a0dcb093adec1bda8caddcfe5333aa48c1fe611))
+
 ## [1.2.10](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.9...v1.2.10) (2025-02-28)
 
 ### Features
