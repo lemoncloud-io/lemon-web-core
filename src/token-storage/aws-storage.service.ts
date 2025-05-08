@@ -37,8 +37,9 @@ export class AWSStorageService extends TokenStorageService {
         const expiredTime = await this.storage.getItem(`${this.prefix}.expired_time`);
         const accessKeyId = await this.storage.getItem(`${this.prefix}.access_key_id`);
         const secretKey = await this.storage.getItem(`${this.prefix}.secret_key`);
+        const identityToken = await this.storage.getItem(`${this.prefix}.identity_token`);
 
-        return !!accessKeyId && !!secretKey && !!expiredTime;
+        return !!accessKeyId && !!secretKey && !!expiredTime && !!identityToken;
     }
 
     async shouldRefreshToken(): Promise<boolean> {
