@@ -4,14 +4,14 @@ import { LoggerService } from '../utils';
 export class LemonTokenManager implements TokenManager {
     private logger: LoggerService;
 
+    private status: TokenManagerStatus = 'stopped';
     private abortController: AbortController | null = null;
     private refreshTimer: NodeJS.Timeout | null = null;
-    private status: TokenManagerStatus = 'idle';
     private retryAttempt: number = 0;
-    private isDestroyed: boolean = false;
 
     private readonly isBrowser = typeof window !== 'undefined' && typeof navigator !== 'undefined';
     private isOnline: boolean = this.isBrowser ? navigator.onLine : true;
+    private networkCleanup: (() => void) | null = null;
 
     private readonly config: Required<TokenManagerConfig>;
     private readonly events: TokenManagerEvents;
@@ -21,10 +21,10 @@ export class LemonTokenManager implements TokenManager {
         this.logger = new LoggerService('TokenManager');
         this.webCore = webCore;
         this.config = {
-            refreshBufferTime: 5 * 60 * 1000,
+            refreshBufferTime: 1 * 60 * 1000, // 1분
             maxRetryAttempts: 3,
-            baseRetryDelay: 30 * 1000,
-            enableLogging: true,
+            baseRetryDelay: 30 * 1000, // 30초
+            enableLogging: false,
             autoStart: true,
             ...config,
         };
@@ -37,140 +37,197 @@ export class LemonTokenManager implements TokenManager {
         }
     }
 
-    private setStatus(status: TokenManagerStatus): void {
-        if (this.status !== status && !this.isDestroyed) {
-            this.status = status;
-            this.events.onStatusChanged?.(status);
-            this.log('info', `Status: ${status}`);
-        }
-    }
-
-    private checkDestroyed(): void {
-        if (this.isDestroyed) {
-            throw new Error('TokenManager has been destroyed');
-        }
-    }
-
     getStatus(): TokenManagerStatus {
         return this.status;
     }
 
     isRunning(): boolean {
-        return !this.isDestroyed && this.status !== 'stopped';
+        return this.status === 'running' || this.status === 'refreshing' || this.status === 'retrying';
     }
 
-    async start(): Promise<void> {
-        this.checkDestroyed();
+    canStart(): boolean {
+        return this.status === 'stopped' || this.status === 'error';
+    }
 
-        if (this.isRunning()) {
-            this.log('warn', 'Already running');
-            return;
-        }
+    private isDestroyed(): boolean {
+        return this.status === 'destroyed';
+    }
 
-        this.log('info', 'Starting...');
-        this.retryAttempt = 0;
-        this.abortController = new AbortController();
-        this.setStatus('idle');
+    private setStatus(newStatus: TokenManagerStatus): void {
+        const validTransitions: Record<TokenManagerStatus, TokenManagerStatus[]> = {
+            stopped: ['starting', 'destroyed'],
+            starting: ['running', 'stopped', 'error'],
+            running: ['refreshing', 'stopped', 'destroyed'],
+            refreshing: ['running', 'retrying', 'error', 'stopped'],
+            retrying: ['refreshing', 'error', 'stopped'],
+            error: ['starting', 'destroyed'], // 재시작 가능
+            destroyed: [], // 비가역적
+        };
 
-        try {
-            const isAuthenticated = await this.webCore.isAuthenticated();
-            if (!isAuthenticated) {
-                this.log('warn', 'Not authenticated');
+        if (this.status !== newStatus) {
+            const validNext = validTransitions[this.status] || [];
+            if (!validNext.includes(newStatus)) {
+                this.log('warn', `Invalid state transition: ${this.status} -> ${newStatus}`);
                 return;
             }
 
+            this.status = newStatus;
+            this.events.onStatusChanged?.(newStatus);
+            this.log('info', `Status: ${newStatus}`);
+        }
+    }
+
+    // ======================
+    // 생명주기 관리
+    // ======================
+
+    async start(): Promise<void> {
+        if (this.isDestroyed()) {
+            throw new Error('Cannot start destroyed TokenManager');
+        }
+
+        if (!this.canStart()) {
+            this.log('warn', `Cannot start from status: ${this.status}`);
+            return;
+        }
+
+        this.log('info', 'Starting TokenManager...');
+        this.setStatus('starting');
+        this.retryAttempt = 0;
+        this.abortController = new AbortController();
+
+        try {
+            // 인증 상태 확인
+            const isAuthenticated = await this.webCore.isAuthenticated();
+            if (!isAuthenticated) {
+                this.log('warn', 'Not authenticated, stopping');
+                this.setStatus('stopped');
+                return;
+            }
+
+            // 정상 동작 상태로 전환
+            this.setStatus('running');
+
+            // 초기 토큰 체크
             await this.performTokenCheck();
+
+            // 스케줄링 시작
             this.scheduleNextCheck();
+
+            // 네트워크 모니터링 설정
             this.setupNetworkMonitoring();
 
             this.log('info', 'Started successfully');
         } catch (error) {
             this.log('error', 'Start failed:', error);
-            this.handleError(error as Error);
+            this.setStatus('error');
+            this.cleanup();
+            throw error;
         }
     }
 
     stop(): void {
-        if (this.isDestroyed) {
+        if (this.isDestroyed()) {
             return;
         }
 
-        this.log('info', 'Stopping...');
+        this.log('info', 'Stopping TokenManager...');
         this.setStatus('stopped');
         this.cleanup();
     }
 
     destroy(): void {
-        if (this.isDestroyed) {
+        if (this.isDestroyed()) {
             return;
         }
 
-        this.log('info', 'Destroying...');
-        this.isDestroyed = true;
+        this.log('info', 'Destroying TokenManager...');
+        this.setStatus('destroyed');
         this.cleanup();
     }
 
     private cleanup(): void {
+        // 진행 중인 비동기 작업 취소
         this.abortController?.abort();
         this.abortController = null;
 
+        // 타이머 정리
         if (this.refreshTimer) {
             clearTimeout(this.refreshTimer);
             this.refreshTimer = null;
         }
+
+        // 네트워크 모니터링 정리
+        this.cleanupNetworkMonitoring();
     }
+
+    // ======================
+    // 토큰 관리 로직
+    // ======================
 
     async forceRefresh(): Promise<boolean> {
-        this.checkDestroyed();
+        if (this.isDestroyed()) {
+            throw new Error('Cannot refresh on destroyed TokenManager');
+        }
 
         try {
-            this.setStatus('checking');
-            const shouldRefresh = await this.webCore.getTokenStorage().shouldRefreshToken();
+            this.log('info', 'Force refresh requested');
 
-            if (shouldRefresh) {
-                await this.executeRefresh();
-                return true;
+            const shouldRefresh = await this.webCore.getTokenStorage().shouldRefreshToken();
+            if (!shouldRefresh) {
+                this.log('info', 'Token does not need refresh');
+                return false;
             }
 
-            this.setStatus('idle');
-            return false;
+            const previousStatus = this.status;
+            this.setStatus('refreshing');
+
+            await this.executeRefresh();
+
+            // 이전 상태가 error였다면 running으로, 아니면 이전 상태로
+            this.setStatus(previousStatus === 'error' ? 'running' : previousStatus);
+
+            return true;
         } catch (error) {
+            this.log('error', 'Force refresh failed:', error);
             this.handleError(error as Error);
             return false;
-        }
-    }
-
-    private async executeRefresh(): Promise<void> {
-        this.setStatus('refreshing');
-
-        try {
-            await this.webCore.refreshCachedToken();
-            this.retryAttempt = 0; // 성공시 재시도 카운터 리셋
-            this.setStatus('idle');
-            this.events.onTokenRefreshed?.();
-            this.log('info', 'Token refreshed successfully');
-        } catch (error) {
-            this.log('error', 'Token refresh failed:', error);
-            throw error;
         }
     }
 
     private async performTokenCheck(): Promise<void> {
-        if (this.abortController?.signal.aborted) {
+        if (!this.isRunning() || this.abortController?.signal.aborted) {
             return;
         }
 
         try {
-            this.setStatus('checking');
+            this.setStatus('refreshing');
 
             const shouldRefresh = await this.webCore.getTokenStorage().shouldRefreshToken();
-            if (shouldRefresh && !this.abortController?.signal.aborted) {
+
+            if (shouldRefresh && this.isRunning() && !this.abortController?.signal.aborted) {
                 await this.executeRefresh();
-            } else {
-                this.setStatus('idle');
             }
+
+            // 성공시 상태 복원 및 재시도 카운터 리셋
+            this.setStatus('running');
+            this.retryAttempt = 0;
         } catch (error) {
+            this.log('error', 'Token check failed:', error);
             this.handleError(error as Error);
+        }
+    }
+
+    private async executeRefresh(): Promise<void> {
+        this.log('info', 'Executing token refresh...');
+
+        try {
+            await this.webCore.refreshCachedToken();
+            this.events.onTokenRefreshed?.();
+            this.log('info', 'Token refreshed successfully');
+        } catch (error) {
+            this.log('error', 'Token refresh execution failed:', error);
+            throw error;
         }
     }
 
@@ -181,61 +238,29 @@ export class LemonTokenManager implements TokenManager {
         if (this.retryAttempt >= this.config.maxRetryAttempts) {
             this.log('error', `Max retry attempts (${this.config.maxRetryAttempts}) reached`);
             this.setStatus('error');
-            this.retryAttempt = 0; // 리셋하여 다음 주기에서 다시 시도
+            this.cleanup(); // 복구 불가능한 상태에서는 리소스 정리
         } else {
-            this.setStatus('retrying');
             this.log('warn', `Retry attempt ${this.retryAttempt}/${this.config.maxRetryAttempts}`);
+            this.setStatus('retrying');
         }
     }
 
-    private calculateRetryDelay(): number {
-        // 지수 백오프: 30s -> 60s -> 120s
-        return this.config.baseRetryDelay * Math.pow(2, this.retryAttempt - 1);
-    }
-
-    private async getNextCheckInterval(): Promise<number> {
-        if (this.status === 'retrying') {
-            return this.calculateRetryDelay();
-        }
-
-        try {
-            const tokenStorage = this.webCore.getTokenStorage();
-            const expiredTime = +((await tokenStorage.getItem(`expired_time`)) || '0');
-
-            if (!expiredTime) {
-                return 60 * 1000; // 1분 기본값
-            }
-
-            const now = Date.now();
-            const timeUntilExpiry = expiredTime - now;
-            const timeUntilRefresh = timeUntilExpiry - this.config.refreshBufferTime;
-
-            if (timeUntilRefresh <= 0) {
-                return 30 * 1000; // 즉시 체크
-            }
-
-            // 적절한 체크 간격: 남은 시간의 1/3, 최소 30초, 최대 5분
-            const checkInterval = Math.max(Math.min(timeUntilRefresh / 3, 5 * 60 * 1000), 30 * 1000);
-
-            this.log('info', `Next check in ${Math.round(checkInterval / 1000)}s`);
-            return checkInterval;
-        } catch (error) {
-            this.log('error', 'Error calculating check interval:', error);
-            return 60 * 1000;
-        }
-    }
+    // ======================
+    // 스케줄링 로직
+    // ======================
 
     private scheduleNextCheck(): void {
         if (!this.isRunning() || this.abortController?.signal.aborted) {
             return;
         }
 
+        // 기존 타이머 정리
         if (this.refreshTimer) {
             clearTimeout(this.refreshTimer);
             this.refreshTimer = null;
         }
 
-        // async 함수를 동기적으로 처리하지 않고 Promise로 처리
+        // 다음 체크 간격 계산
         this.getNextCheckInterval()
             .then(interval => {
                 if (!this.isRunning() || this.abortController?.signal.aborted) {
@@ -247,17 +272,18 @@ export class LemonTokenManager implements TokenManager {
                         return;
                     }
 
-                    // 오프라인 체크
+                    // 오프라인 상태 체크
                     if (this.isBrowser && !this.isOnline) {
                         this.log('info', 'Offline, skipping check');
                         this.scheduleNextCheck();
                         return;
                     }
 
+                    // 토큰 체크 수행
                     await this.performTokenCheck();
 
-                    // 성공 또는 최대 재시도 후에만 다음 스케줄링
-                    if (this.status === 'idle' || this.retryAttempt === 0) {
+                    // 성공하거나 최대 재시도 후에만 다음 스케줄링
+                    if (this.status === 'running' || this.retryAttempt === 0) {
                         this.scheduleNextCheck();
                     }
                 }, interval);
@@ -270,6 +296,45 @@ export class LemonTokenManager implements TokenManager {
                 }
             });
     }
+
+    private async getNextCheckInterval(): Promise<number> {
+        // 재시도 상태에서는 지수 백오프 적용
+        if (this.status === 'retrying') {
+            const retryDelay = this.config.baseRetryDelay * Math.pow(2, this.retryAttempt - 1);
+            this.log('info', `Next retry in ${Math.round(retryDelay / 1000)}s`);
+            return retryDelay;
+        }
+
+        try {
+            const tokenStorage = this.webCore.getTokenStorage();
+            const expiredTime = +((await tokenStorage.getItem('expired_time')) || '0');
+
+            if (!expiredTime) {
+                return 60 * 1000; // 1분 기본값
+            }
+
+            const now = Date.now();
+            const timeUntilExpiry = expiredTime - now;
+            const timeUntilRefresh = timeUntilExpiry - this.config.refreshBufferTime;
+
+            if (timeUntilRefresh <= 0) {
+                return 30 * 1000; // 즉시 체크 (30초 최소 간격)
+            }
+
+            // 적절한 체크 간격: 남은 시간의 1/3, 최소 30초, 최대 5분
+            const checkInterval = Math.max(Math.min(timeUntilRefresh / 3, 5 * 60 * 1000), 30 * 1000);
+
+            this.log('info', `Next check in ${Math.round(checkInterval / 1000)}s (expires in ${Math.round(timeUntilExpiry / 1000)}s)`);
+            return checkInterval;
+        } catch (error) {
+            this.log('error', 'Error calculating check interval:', error);
+            return 60 * 1000; // 기본 1분
+        }
+    }
+
+    // ======================
+    // 네트워크 모니터링
+    // ======================
 
     private setupNetworkMonitoring(): void {
         if (!this.isBrowser) {
@@ -292,12 +357,19 @@ export class LemonTokenManager implements TokenManager {
             this.isOnline = false;
         };
 
-        this.abortController?.signal.addEventListener('abort', () => {
-            window.removeEventListener('online', handleOnline);
-            window.removeEventListener('offline', handleOffline);
-        });
-
+        // 이벤트 리스너 등록
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
+
+        // 정리 함수 저장
+        this.networkCleanup = () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }
+
+    private cleanupNetworkMonitoring(): void {
+        this.networkCleanup?.();
+        this.networkCleanup = null;
     }
 }
