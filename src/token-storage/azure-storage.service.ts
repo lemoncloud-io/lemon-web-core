@@ -90,7 +90,7 @@ export class AzureStorageService extends TokenStorageService {
      */
     async saveOAuthToken(token: LemonOAuthToken): Promise<void> {
         const { accountId, authId, credential, identityId, identityToken, accessToken } = token;
-        const { hostKey, clientId } = credential;
+        const { hostKey, clientId, Expiration } = credential;
 
         this.storage.setItem(`${this.prefix}.account_id`, accountId || '');
         this.storage.setItem(`${this.prefix}.auth_id`, authId || '');
@@ -101,11 +101,11 @@ export class AzureStorageService extends TokenStorageService {
         this.storage.setItem(`${this.prefix}.access_token`, accessToken || '');
         this.storage.setItem(`${this.prefix}.client_id`, clientId || 'default');
 
-        // Set the expiration time for the token.
-        const TIME_DELAY = 0.5; // 0.5 = 30 minutes, 1 = 1 hour
-        const expiredTime = new Date().getTime() + TIME_DELAY * 60 * 60 * 1000; // 30 minutes
-        this.storage.setItem(`${this.prefix}.expired_time`, expiredTime.toString());
+        const serverExpiration = new Date(Expiration).getTime();
+        const SAFETY_BUFFER = 5 * 60 * 1000; // 5 minutes before actual expiration
+        const expiredTime = serverExpiration - SAFETY_BUFFER;
 
+        this.storage.setItem(`${this.prefix}.expired_time`, expiredTime.toString());
         return;
     }
 
