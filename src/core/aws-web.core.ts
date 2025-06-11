@@ -17,14 +17,17 @@ import { calcSignature, LoggerService } from '../utils';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { AWSHttpRequestBuilder, HttpRequestBuilder } from '../http';
 import AWS from 'aws-sdk/global.js';
+import { LemonTokenManager } from './token-manager';
+import { RefreshableWebCore, TokenManager, TokenManagerConfig, TokenManagerEvents } from '../types/token-manager';
 
 /**
  * AWSWebCore class implements AWS-based operations for Lemoncloud authentication logic
  */
-export class AWSWebCore implements WebCoreService {
+export class AWSWebCore implements WebCoreService, RefreshableWebCore {
     private readonly tokenStorage: AWSStorageService;
     private readonly logger: LoggerService;
     private sharedAxiosInstance: AxiosInstance;
+    private tokenManagerInstance: LemonTokenManager | null = null;
 
     /**
      * Creates an instance of AWSWebCore.
@@ -34,6 +37,31 @@ export class AWSWebCore implements WebCoreService {
         this.logger = new LoggerService('AWSCore');
         this.tokenStorage = new AWSStorageService(this.config);
         this.sharedAxiosInstance = axios.create();
+    }
+
+    /**
+     * Gets or creates the token manager instance
+     * @param config Optional configuration for the token manager
+     * @param events Optional event handlers
+     * @returns The token manager instance
+     */
+    getTokenManager(config?: TokenManagerConfig, events?: TokenManagerEvents): TokenManager {
+        if (this.tokenManagerInstance && !this.tokenManagerInstance.isRunning()) {
+            this.tokenManagerInstance.destroy();
+            this.tokenManagerInstance = null;
+        }
+
+        if (!this.tokenManagerInstance) {
+            this.tokenManagerInstance = new LemonTokenManager(this, config, events);
+
+            if (config?.autoStart !== false) {
+                this.tokenManagerInstance.start().catch(error => {
+                    this.logger.error('TokenManager auto-start failed:', error);
+                });
+            }
+        }
+
+        return this.tokenManagerInstance;
     }
 
     /**
@@ -286,47 +314,6 @@ export class AWSWebCore implements WebCoreService {
     }
 
     /**
-     * Refreshes the cached token new version
-     * @param {string} [domain=''] - The domain for the refresh request.
-     * @param {string} [url=''] - The request url for refresh token
-     * @returns {Promise<AWS.Credentials | null>} - The AWS credentials or null if refresh fails.
-     */
-    async refreshCachedTokenV2(domain: string = '', url: string = '') {
-        const cached = await this.tokenStorage.getCachedOAuthToken();
-        if (!cached.authId) {
-            throw new Error('authId is required for token refresh');
-        }
-
-        const payload = {
-            authId: cached.authId,
-            accountId: cached.accountId,
-            identityId: cached.identityId,
-            identityToken: cached.identityToken,
-        };
-        const current = new Date().toISOString();
-        const signature = calcSignature(payload, current);
-
-        let body: RefreshTokenBody = { current, signature };
-        if (domain && domain.length > 0) {
-            body = { ...body, domain };
-        }
-
-        const response: HttpResponse<any> = await this.signedRequest(
-            'POST',
-            url ? url : `${this.config.oAuthEndpoint}/oauth/${cached.authId}/refresh`,
-            {},
-            { ...body }
-        );
-        const refreshToken = {
-            ...(response.data.Token ? response.data.Token : response.data),
-            identityToken: response.data.identityToken || cached.identityToken,
-            identityPoolId: cached.identityPoolId,
-        };
-        this.logger.info('success to refresh token');
-        return await this.buildCredentialsByToken(refreshToken);
-    }
-
-    /**
      * Changes the user site and returns new AWS credentials.
      *
      * @param {ChangeSiteBody} changeSiteBody - The body containing site change details.
@@ -371,6 +358,9 @@ export class AWSWebCore implements WebCoreService {
      * @returns {Promise<boolean>} - A promise that resolves to false.
      */
     async logout(): Promise<void> {
+        this.tokenManagerInstance?.destroy();
+        this.tokenManagerInstance = null;
+
         AWS.config.credentials = null;
         await this.tokenStorage.clearOAuthToken();
         return;
