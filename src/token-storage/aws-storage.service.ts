@@ -78,7 +78,7 @@ export class AWSStorageService extends TokenStorageService {
 
     async saveOAuthToken(token: LemonOAuthToken): Promise<void> {
         const { accountId, authId, credential, identityId, identityPoolId, identityToken } = token;
-        const { AccessKeyId, SecretKey, SessionToken } = credential;
+        const { AccessKeyId, SecretKey, SessionToken, Expiration } = credential;
 
         // save items...
         this.storage.setItem(`${this.prefix}.account_id`, accountId || '');
@@ -91,9 +91,7 @@ export class AWSStorageService extends TokenStorageService {
         this.storage.setItem(`${this.prefix}.secret_key`, SecretKey || '');
         this.storage.setItem(`${this.prefix}.session_token`, SessionToken || '');
 
-        // set expired time
-        const TIME_DELAY = 0.5; // 0.5 = 30minutes, 1 = 1hour
-        const expiredTime = new Date().getTime() + TIME_DELAY * 60 * 60 * 1000; // 30 minutes
+        const expiredTime = this.calculateTokenExpiration(Expiration, identityToken);
         this.storage.setItem(`${this.prefix}.expired_time`, expiredTime.toString());
 
         return;

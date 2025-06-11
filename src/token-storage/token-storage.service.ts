@@ -1,5 +1,6 @@
 import { CloudProvider, Storage, WebCoreConfig } from '../types';
 import { LocalStorageService } from '../utils';
+import { jwtDecode } from 'jwt-decode';
 
 export const USE_X_LEMON_IDENTITY_KEY = 'use_x_lemon_identity_key';
 export const USE_X_LEMON_LANGUAGE_KEY = 'use_x_lemon_language_key';
@@ -67,4 +68,36 @@ export abstract class TokenStorageService {
      * @returns {Promise<boolean>} - A promise that resolves to true if the token should be refreshed, false otherwise.
      */
     abstract shouldRefreshToken(): Promise<boolean>;
+
+    calculateTokenExpiration(serverExpiration?: string, jwtToken?: string): number {
+        const SAFETY_BUFFER = 5 * 60 * 1000; // 5 minutes
+        const FALLBACK_DURATION = 30 * 60 * 1000; // 30 minutes
+
+        if (serverExpiration) {
+            return new Date(serverExpiration).getTime() - SAFETY_BUFFER;
+        }
+
+        if (jwtToken) {
+            try {
+                const jwtExpiration = this.extractJWTExpiration(jwtToken);
+                if (jwtExpiration) {
+                    return jwtExpiration * 1000 - SAFETY_BUFFER; // JWT exp is in seconds
+                }
+            } catch (error) {
+                console.warn('Failed to parse JWT expiration:', error);
+            }
+        }
+
+        console.warn('No server expiration found, using fallback duration');
+        return new Date().getTime() + FALLBACK_DURATION;
+    }
+
+    extractJWTExpiration(jwt: string): number | null {
+        try {
+            const decoded = jwtDecode(jwt);
+            return decoded.exp || null;
+        } catch {
+            return null;
+        }
+    }
 }
