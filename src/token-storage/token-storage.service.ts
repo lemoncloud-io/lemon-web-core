@@ -1,6 +1,6 @@
 import { CloudProvider, Storage, WebCoreConfig } from '../types';
 import { LocalStorageService } from '../utils';
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode, JwtPayload } from 'jwt-decode';
 
 export const USE_X_LEMON_IDENTITY_KEY = 'use_x_lemon_identity_key';
 export const USE_X_LEMON_LANGUAGE_KEY = 'use_x_lemon_language_key';
@@ -71,7 +71,7 @@ export abstract class TokenStorageService {
 
     calculateTokenExpiration(serverExpiration?: string, jwtToken?: string): number {
         const SAFETY_BUFFER = 5 * 60 * 1000; // 5 minutes
-        const FALLBACK_DURATION = 30 * 60 * 1000; // 30 minutes
+        const FALLBACK_DURATION = 15 * 60 * 1000; // 15 minutes
 
         if (serverExpiration) {
             return new Date(serverExpiration).getTime() - SAFETY_BUFFER;
@@ -79,7 +79,7 @@ export abstract class TokenStorageService {
 
         if (jwtToken) {
             try {
-                const jwtExpiration = this.extractJWTExpiration(jwtToken);
+                const jwtExpiration = this.extractJWT(jwtToken)?.exp || null;
                 if (jwtExpiration) {
                     return jwtExpiration * 1000 - SAFETY_BUFFER; // JWT exp is in seconds
                 }
@@ -92,10 +92,25 @@ export abstract class TokenStorageService {
         return new Date().getTime() + FALLBACK_DURATION;
     }
 
-    extractJWTExpiration(jwt: string): number | null {
+    calculateTokenIssuedTime(jwtToken?: string): number | null {
+        if (jwtToken) {
+            try {
+                const jwtIssuedAt = this.extractJWT(jwtToken)?.iat || null;
+                if (jwtIssuedAt) {
+                    return jwtIssuedAt * 1000;
+                }
+            } catch (error) {
+                console.warn('Failed to parse JWT expiration:', error);
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    extractJWT(jwt: string): JwtPayload | null {
         try {
-            const decoded = jwtDecode(jwt);
-            return decoded.exp || null;
+            return jwtDecode(jwt);
         } catch {
             return null;
         }
