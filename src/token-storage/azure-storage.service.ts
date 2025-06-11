@@ -101,10 +101,7 @@ export class AzureStorageService extends TokenStorageService {
         this.storage.setItem(`${this.prefix}.access_token`, accessToken || '');
         this.storage.setItem(`${this.prefix}.client_id`, clientId || 'default');
 
-        const serverExpiration = new Date(Expiration).getTime();
-        const SAFETY_BUFFER = 5 * 60 * 1000; // 5 minutes before actual expiration
-        const expiredTime = serverExpiration - SAFETY_BUFFER;
-
+        const expiredTime = this.calculateTokenExpiration(Expiration, identityToken);
         this.storage.setItem(`${this.prefix}.expired_time`, expiredTime.toString());
         return;
     }
