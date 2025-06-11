@@ -1,5 +1,6 @@
 import { AxiosInstance } from 'axios';
 import { AWSWebCore, AzureWebCore } from '../core';
+import { TokenManager, TokenManagerConfig, TokenManagerEvents } from './token-manager';
 
 /**
  * Interface representing a web core service.
@@ -41,6 +42,14 @@ export interface WebCoreService {
      * @returns The shared axios instance
      */
     getSharedAxiosInstance(): AxiosInstance;
+
+    /**
+     * Gets or creates the token manager instance
+     * @param config Optional configuration for the token manager
+     * @param events Optional event handlers
+     * @returns The token manager instance
+     */
+    getTokenManager?(config?: TokenManagerConfig, events?: TokenManagerEvents): TokenManager;
 }
 
 /**
