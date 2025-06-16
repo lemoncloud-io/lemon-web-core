@@ -132,6 +132,8 @@ export class AzureStorageService extends TokenStorageService {
         const issuedTime = this.calculateTokenIssuedTime(identityToken);
         if (issuedTime) {
             this.storage.setItem(`${this.prefix}.issued_time`, issuedTime.toString());
+        } else {
+            this.storage.removeItem(`${this.prefix}.issued_time`);
         }
 
         return;
