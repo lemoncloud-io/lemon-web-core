@@ -1,3 +1,9 @@
+## [1.2.14](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.13...v1.2.14) (2025-06-16)
+
+### Bug Fixes
+
+- remove issued_time if calculation fails ([b155756](https://github.com/lemoncloud-io/lemon-web-core/commit/b15575615c473437003ae0a65fe3fbc78eae9dca))
+
 ## [1.2.13](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.12...v1.2.13) (2025-06-16)
 
 ## [1.2.12](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.11...v1.2.12) (2025-06-11)
