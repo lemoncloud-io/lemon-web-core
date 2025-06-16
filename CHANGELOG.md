@@ -1,5 +1,11 @@
 # [1.3.0](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.14...v1.3.0) (2025-06-16)
 
+### Bug Fixes
+
+- improve token refresh and authentication logic ([7704231](https://github.com/lemoncloud-io/lemon-web-core/commit/7704231be7c380c81378a7660c811f7173db90e4))
+
+# [1.3.0](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.14...v1.3.0) (2025-06-16)
+
 ## [1.2.14](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.2.13...v1.2.14) (2025-06-16)
 
 ### Bug Fixes
