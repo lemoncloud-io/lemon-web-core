@@ -276,51 +276,12 @@ export class AWSWebCore implements WebCoreService {
             {},
             { ...body }
         );
+
+        const tokenData = response.data.Token || response.data;
         const refreshToken = {
-            identityToken: response.data.identityToken || cached.identityToken,
+            identityToken: tokenData.identityToken || cached.identityToken,
             identityPoolId: cached.identityPoolId,
-            ...(response.data.Token ? response.data.Token : response.data),
-        };
-        this.logger.info('success to refresh token');
-        return await this.buildCredentialsByToken(refreshToken);
-    }
-
-    /**
-     * Refreshes the cached token new version
-     * @param {string} [domain=''] - The domain for the refresh request.
-     * @param {string} [url=''] - The request url for refresh token
-     * @returns {Promise<AWS.Credentials | null>} - The AWS credentials or null if refresh fails.
-     */
-    async refreshCachedTokenV2(domain: string = '', url: string = '') {
-        const cached = await this.tokenStorage.getCachedOAuthToken();
-        if (!cached.authId) {
-            throw new Error('authId is required for token refresh');
-        }
-
-        const payload = {
-            authId: cached.authId,
-            accountId: cached.accountId,
-            identityId: cached.identityId,
-            identityToken: cached.identityToken,
-        };
-        const current = new Date().toISOString();
-        const signature = calcSignature(payload, current);
-
-        let body: RefreshTokenBody = { current, signature };
-        if (domain && domain.length > 0) {
-            body = { ...body, domain };
-        }
-
-        const response: HttpResponse<any> = await this.signedRequest(
-            'POST',
-            url ? url : `${this.config.oAuthEndpoint}/oauth/${cached.authId}/refresh`,
-            {},
-            { ...body }
-        );
-        const refreshToken = {
-            ...(response.data.Token ? response.data.Token : response.data),
-            identityToken: response.data.identityToken || cached.identityToken,
-            identityPoolId: cached.identityPoolId,
+            ...tokenData,
         };
         this.logger.info('success to refresh token');
         return await this.buildCredentialsByToken(refreshToken);
