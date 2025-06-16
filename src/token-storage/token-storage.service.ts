@@ -92,7 +92,7 @@ export abstract class TokenStorageService {
         return new Date().getTime() + FALLBACK_DURATION;
     }
 
-    calculateTokenIssuedTime(jwtToken?: string): number | null {
+    calculateTokenIssuedTime(jwtToken?: string): number | string {
         if (jwtToken) {
             try {
                 const jwtIssuedAt = this.extractJWT(jwtToken)?.iat || null;
@@ -101,11 +101,11 @@ export abstract class TokenStorageService {
                 }
             } catch (error) {
                 console.warn('Failed to parse JWT expiration:', error);
-                return null;
+                return '';
             }
         }
 
-        return null;
+        return '';
     }
 
     extractJWT(jwt: string): JwtPayload | null {

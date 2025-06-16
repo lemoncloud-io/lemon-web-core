@@ -59,7 +59,6 @@ export class AzureStorageService extends TokenStorageService {
      */
     async shouldRefreshToken(): Promise<boolean> {
         const expiredTime = +(await this.storage.getItem(`${this.prefix}.expired_time`));
-        const issuedTime = +(await this.storage.getItem(`${this.prefix}.issued_time`));
         const now = new Date().getTime();
 
         if (!expiredTime || expiredTime <= 0) {
@@ -68,19 +67,6 @@ export class AzureStorageService extends TokenStorageService {
 
         if (now >= expiredTime) {
             return true;
-        }
-
-        if (issuedTime && issuedTime > 0) {
-            const tokenLifetime = expiredTime - issuedTime;
-            if (tokenLifetime <= 0) {
-                return true;
-            }
-
-            const lifetimeThreshold = issuedTime + tokenLifetime * 0.75; // 75%
-            const bufferThreshold = expiredTime - 5 * 60 * 1000;
-
-            const refreshThreshold = Math.min(lifetimeThreshold, bufferThreshold);
-            return now >= refreshThreshold;
         }
 
         const bufferTime = 5 * 60 * 1000;
@@ -132,8 +118,6 @@ export class AzureStorageService extends TokenStorageService {
         const issuedTime = this.calculateTokenIssuedTime(identityToken);
         if (issuedTime) {
             this.storage.setItem(`${this.prefix}.issued_time`, issuedTime.toString());
-        } else {
-            this.storage.removeItem(`${this.prefix}.issued_time`);
         }
 
         return;
