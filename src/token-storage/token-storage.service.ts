@@ -65,10 +65,19 @@ export abstract class TokenStorageService {
 
     /**
      * Checks if the cached token should be refreshed.
-     * @returns {Promise<boolean>} - A promise that resolves to true if the token should be refreshed, false otherwise.
+     * Abstract method that must be implemented by subclasses to define refresh logic.
+     * @returns {Promise<boolean>} Promise that resolves to true if the token should be refreshed, false otherwise
      */
     abstract shouldRefreshToken(): Promise<boolean>;
 
+    /**
+     * Calculates the token expiration timestamp with built-in safety buffer.
+     * Uses a priority-based approach: server expiration first, then JWT expiration, finally fallback duration.
+     * Automatically applies a 5-minute safety buffer to prevent token expiry during requests.
+     * @param {string} [serverExpiration] - ISO string or date string from server response
+     * @param {string} [jwtToken] - JWT token string to extract expiration from
+     * @returns {number} Unix timestamp (milliseconds) when the token should be considered expired
+     */
     calculateTokenExpiration(serverExpiration?: string, jwtToken?: string): number {
         const SAFETY_BUFFER = 5 * 60 * 1000; // 5 minutes
         const FALLBACK_DURATION = 15 * 60 * 1000; // 15 minutes
@@ -92,6 +101,12 @@ export abstract class TokenStorageService {
         return new Date().getTime() + FALLBACK_DURATION;
     }
 
+    /**
+     * Extracts the issued time from a JWT token for token lifecycle tracking.
+     * Used to calculate token age and determine refresh timing based on token lifetime.
+     * @param {string} [jwtToken] - JWT token string to extract issued time from
+     * @returns {number | string} Unix timestamp in milliseconds if found, empty string if not available or on error
+     */
     calculateTokenIssuedTime(jwtToken?: string): number | string {
         if (jwtToken) {
             try {
@@ -108,6 +123,12 @@ export abstract class TokenStorageService {
         return '';
     }
 
+    /**
+     * Safely decodes a JWT token and extracts its payload.
+     * Provides error-safe JWT parsing without throwing exceptions on malformed tokens.
+     * @param {string} jwt - JWT token string to decode
+     * @returns {JwtPayload | null} Decoded JWT payload object, or null if decoding fails
+     */
     extractJWT(jwt: string): JwtPayload | null {
         try {
             return jwtDecode(jwt);
