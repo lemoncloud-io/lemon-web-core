@@ -179,38 +179,42 @@ export class AWSWebCore implements WebCoreService {
      * @returns {Promise<boolean>} - True if authenticated, false otherwise.
      */
     async isAuthenticated(): Promise<boolean> {
-        const hasCachedToken = await this.tokenStorage.hasCachedToken();
-        if (!hasCachedToken) {
-            return false;
-        }
-
-        const shouldRefreshToken = await this.tokenStorage.shouldRefreshToken();
-        if (shouldRefreshToken) {
-            this.logger.info('return isAuthenticated after refresh token');
-            const refreshed = await this.refreshCachedToken();
-            if (refreshed) {
-                return true;
+        try {
+            const hasCachedToken = await this.tokenStorage.hasCachedToken();
+            if (!hasCachedToken) {
+                return false;
             }
-        }
 
-        const cachedToken = await this.tokenStorage.hasCachedToken();
-        if (!cachedToken) {
-            return false;
-        }
+            const shouldRefreshToken = await this.tokenStorage.shouldRefreshToken();
+            if (shouldRefreshToken) {
+                this.logger.info('return isAuthenticated after refresh token');
+                const refreshed = await this.refreshCachedToken();
+                return refreshed !== null;
+            }
 
-        return new Promise(resolve => {
-            try {
-                (<AWS.Credentials>AWS.config.credentials).get(error => {
-                    if (error) {
-                        this.logger.error('get AWSConfig.credentials error: ', error);
+            return new Promise(resolve => {
+                try {
+                    const credentials = AWS.config.credentials as AWS.Credentials;
+                    if (!credentials) {
+                        resolve(false);
+                        return;
                     }
-                    const isAuthenticated = !error;
-                    resolve(isAuthenticated);
-                });
-            } catch (e) {
-                this.logger.error('isAuthenticated error: ', e);
-            }
-        });
+
+                    credentials.get(error => {
+                        if (error) {
+                            this.logger.error('get AWSConfig.credentials error: ', error);
+                        }
+                        resolve(!error);
+                    });
+                } catch (e) {
+                    this.logger.error('isAuthenticated error: ', e);
+                    resolve(false);
+                }
+            });
+        } catch (error) {
+            this.logger.error('isAuthenticated error:', error);
+            return false;
+        }
     }
 
     /**
@@ -221,7 +225,12 @@ export class AWSWebCore implements WebCoreService {
     async buildCredentialsByToken(token: LemonOAuthToken): Promise<AWS.Credentials> {
         this.logger.log('buildCredentialsByToken()...');
         await this.buildAWSCredentialsByToken(token);
-        return await this.getCredentials();
+
+        const credentials = AWS.config.credentials as AWS.Credentials;
+        if (!credentials) {
+            throw new Error('Failed to build AWS credentials');
+        }
+        return credentials;
     }
 
     /**
@@ -231,7 +240,12 @@ export class AWSWebCore implements WebCoreService {
     async buildCredentialsByStorage(): Promise<AWS.Credentials> {
         this.logger.log('buildCredentialsByStorage()...');
         await this.buildAWSCredentialsByStorage();
-        return await this.getCredentials();
+
+        const credentials = AWS.config.credentials as AWS.Credentials;
+        if (!credentials) {
+            throw new Error('Failed to build AWS credentials from storage');
+        }
+        return credentials;
     }
 
     /**
@@ -251,40 +265,47 @@ export class AWSWebCore implements WebCoreService {
      * @returns {Promise<AWS.Credentials | null>} - The AWS credentials or null if refresh fails.
      */
     async refreshCachedToken(domain: string = '', url: string = '') {
-        const cached = await this.tokenStorage.getCachedOAuthToken();
-        if (!cached.authId) {
-            throw new Error('authId is required for token refresh');
+        try {
+            const cached = await this.tokenStorage.getCachedOAuthToken();
+            if (!cached.authId) {
+                throw new Error('authId is required for token refresh');
+            }
+
+            const payload = {
+                authId: cached.authId,
+                accountId: cached.accountId,
+                identityId: cached.identityId,
+                identityToken: cached.identityToken,
+            };
+            const current = new Date().toISOString();
+            const signature = calcSignature(payload, current);
+
+            let body: RefreshTokenBody = { current, signature };
+            if (domain && domain.length > 0) {
+                body = { ...body, domain };
+            }
+
+            const response: HttpResponse<LemonOAuthToken> = await this.signedRequest(
+                'POST',
+                url ? url : `${this.config.oAuthEndpoint}/oauth/${cached.authId}/refresh`,
+                {},
+                { ...body }
+            );
+
+            const tokenData = response.data.Token || response.data;
+            const refreshToken = {
+                identityToken: tokenData.identityToken || cached.identityToken,
+                identityPoolId: cached.identityPoolId,
+                ...tokenData,
+            };
+
+            this.logger.info('success to refresh token');
+
+            return await this.buildCredentialsByToken(refreshToken);
+        } catch (error) {
+            this.logger.error('token refresh failed:', error);
+            return null;
         }
-
-        const payload = {
-            authId: cached.authId,
-            accountId: cached.accountId,
-            identityId: cached.identityId,
-            identityToken: cached.identityToken,
-        };
-        const current = new Date().toISOString();
-        const signature = calcSignature(payload, current);
-
-        let body: RefreshTokenBody = { current, signature };
-        if (domain && domain.length > 0) {
-            body = { ...body, domain };
-        }
-
-        const response: HttpResponse<LemonOAuthToken> = await this.signedRequest(
-            'POST',
-            url ? url : `${this.config.oAuthEndpoint}/oauth/${cached.authId}/refresh`,
-            {},
-            { ...body }
-        );
-
-        const tokenData = response.data.Token || response.data;
-        const refreshToken = {
-            identityToken: tokenData.identityToken || cached.identityToken,
-            identityPoolId: cached.identityPoolId,
-            ...tokenData,
-        };
-        this.logger.info('success to refresh token');
-        return await this.buildCredentialsByToken(refreshToken);
     }
 
     /**
@@ -386,29 +407,16 @@ export class AWSWebCore implements WebCoreService {
         const hasCachedToken = await this.tokenStorage.hasCachedToken();
         if (!hasCachedToken) {
             this.logger.info('has no cached token!');
-            return new Promise(resolve => resolve(null));
+            return null;
         }
 
         const shouldRefreshToken = await this.tokenStorage.shouldRefreshToken();
         if (shouldRefreshToken) {
             this.logger.info('should refresh token!');
             const refreshed = await this.refreshCachedToken();
-            if (refreshed) {
-                return await this.getCurrentCredentials();
+            if (!refreshed) {
+                return null;
             }
-        }
-
-        const cachedToken = await this.tokenStorage.hasCachedToken();
-        if (!cachedToken) {
-            this.logger.info('has no cached token!');
-            return new Promise(resolve => resolve(null));
-        }
-
-        const credentials = AWS.config.credentials as AWS.Credentials;
-        const shouldRefresh = credentials.needsRefresh();
-        if (shouldRefresh) {
-            await credentials.refreshPromise();
-            return await this.getCurrentCredentials();
         }
 
         return await this.getCurrentCredentials();
@@ -440,15 +448,19 @@ export class AWSWebCore implements WebCoreService {
     private getCurrentCredentials(): Promise<AWS.Credentials> {
         return new Promise((resolve, reject) => {
             const credentials = AWS.config.credentials as AWS.Credentials;
+            if (!credentials) {
+                reject(new Error('No AWS credentials configured'));
+                return;
+            }
 
-            credentials?.get(error => {
+            credentials.get(error => {
                 if (error) {
                     this.logger.error('Error on getCurrentCredentials: ', error);
-                    reject(null);
+                    reject(error);
+                } else {
+                    this.logger.info('success to get AWS credentials');
+                    resolve(credentials);
                 }
-                this.logger.info('success to get AWS credentials');
-                const awsCredentials = AWS.config.credentials as AWS.Credentials;
-                resolve(awsCredentials);
             });
         });
     }
