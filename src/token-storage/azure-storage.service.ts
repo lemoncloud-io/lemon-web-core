@@ -62,29 +62,29 @@ export class AzureStorageService extends TokenStorageService {
         const issuedTime = +(await this.storage.getItem(`${this.prefix}.issued_time`));
         const now = new Date().getTime();
 
-        if (!expiredTime) {
-            return true;
+        if (!expiredTime || expiredTime <= 0) {
+            return false;
         }
+
         if (now >= expiredTime) {
             return true;
         }
 
-        // 전략 1: 고정 버퍼 (5분 전에 refresh)
-        const bufferTime = 5 * 60 * 1000;
-        if (now >= expiredTime - bufferTime) {
-            return true;
-        }
-
-        // 전략 2: 토큰 수명의 75% 지점에서 refresh
-        if (issuedTime) {
+        if (issuedTime && issuedTime > 0) {
             const tokenLifetime = expiredTime - issuedTime;
-            const refreshThreshold = issuedTime + tokenLifetime * 0.75;
-            if (now >= refreshThreshold) {
+            if (tokenLifetime <= 0) {
                 return true;
             }
+
+            const lifetimeThreshold = issuedTime + tokenLifetime * 0.75; // 75%
+            const bufferThreshold = expiredTime - 5 * 60 * 1000;
+
+            const refreshThreshold = Math.min(lifetimeThreshold, bufferThreshold);
+            return now >= refreshThreshold;
         }
 
-        return false;
+        const bufferTime = 5 * 60 * 1000;
+        return now >= expiredTime - bufferTime;
     }
 
     /**
