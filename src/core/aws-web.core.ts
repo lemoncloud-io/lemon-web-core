@@ -405,7 +405,7 @@ export class AWSWebCore implements WebCoreService {
             const response: HttpResponse<LemonOAuthToken> = await this.signedRequest(
                 'POST',
                 url ? url : `${this.config.oAuthEndpoint}/oauth/${cached.authId}/refresh`,
-                {},
+                { token: 1 },
                 { ...body }
             );
 
@@ -461,7 +461,7 @@ export class AWSWebCore implements WebCoreService {
         const response: HttpResponse<LemonOAuthToken> = await this.signedRequest(
             'POST',
             url ? url : `${this.config.oAuthEndpoint}/oauth/${authId}/refresh`,
-            {},
+            { token: 1 },
             { current, signature, target }
         );
         const refreshToken = {
