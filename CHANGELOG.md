@@ -1,3 +1,9 @@
+# [1.5.0](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.4.2...v1.5.0) (2025-08-20)
+
+### Features
+
+- **minor:** refresh token with cached credentials ([55e275d](https://github.com/lemoncloud-io/lemon-web-core/commit/55e275d36fb2707d3f98335154b4226d0733798e))
+
 ## [1.4.2](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.4.1...v1.4.2) (2025-08-20)
 
 ### Bug Fixes
