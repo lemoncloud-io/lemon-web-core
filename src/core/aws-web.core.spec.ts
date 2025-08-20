@@ -343,6 +343,11 @@ describe('AWSWebCore', () => {
     describe('refreshCachedToken', () => {
         beforeEach(() => {
             mockStorageService.getCachedOAuthToken.mockResolvedValue(mockToken);
+            mockStorageService.getCachedCredentials.mockResolvedValue({
+                AccessKeyId: 'test-access-key',
+                SecretKey: 'test-secret-key',
+                SessionToken: 'test-session-token',
+            });
             jest.spyOn(awsWebCore, 'signedRequest').mockResolvedValue({
                 data: { ...mockToken, identityToken: 'new-identity-token' },
             } as any);
