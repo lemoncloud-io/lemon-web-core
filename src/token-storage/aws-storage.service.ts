@@ -72,23 +72,19 @@ export class AWSStorageService extends TokenStorageService {
 
     /**
      * Determines whether the stored token should be refreshed based on expiration time.
-     * Uses a 5-minute buffer before actual expiration to ensure token validity.
+     * Returns true if token has expired or expiration info is missing.
      * @returns {Promise<boolean>} Promise resolving to true if token should be refreshed
      */
     async shouldRefreshToken(): Promise<boolean> {
         const expiredTime = +(await this.storage.getItem(`${this.prefix}.expired_time`));
         const now = new Date().getTime();
 
-        if (!expiredTime || expiredTime <= 0) {
-            return false;
-        }
+        const noExpirationInfo = !expiredTime || expiredTime <= 0;
+        const isExpired = now >= expiredTime;
 
-        if (now >= expiredTime) {
-            return true;
-        }
+        const needsRefresh = noExpirationInfo || isExpired;
 
-        const bufferTime = 5 * 60 * 1000;
-        return now >= expiredTime - bufferTime;
+        return needsRefresh;
     }
 
     /**

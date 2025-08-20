@@ -61,16 +61,12 @@ export class AzureStorageService extends TokenStorageService {
         const expiredTime = +(await this.storage.getItem(`${this.prefix}.expired_time`));
         const now = new Date().getTime();
 
-        if (!expiredTime || expiredTime <= 0) {
-            return false;
-        }
+        const noExpirationInfo = !expiredTime || expiredTime <= 0;
+        const isExpired = now >= expiredTime;
 
-        if (now >= expiredTime) {
-            return true;
-        }
+        const needsRefresh = noExpirationInfo || isExpired;
 
-        const bufferTime = 5 * 60 * 1000;
-        return now >= expiredTime - bufferTime;
+        return needsRefresh;
     }
 
     /**
