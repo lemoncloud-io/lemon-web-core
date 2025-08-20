@@ -388,6 +388,10 @@ export class AWSWebCore implements WebCoreService {
                 throw new Error('authId is required for token refresh');
             }
 
+            // NOTE: Set up AWS credentials first to enable signed requests
+            const cachedCredentials = await this.tokenStorage.getCachedCredentials();
+            this.createAWSCredentials(cachedCredentials);
+
             const payload = {
                 authId: cached.authId,
                 accountId: cached.accountId,
