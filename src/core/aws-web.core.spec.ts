@@ -362,7 +362,7 @@ describe('AWSWebCore', () => {
             expect(awsWebCore.signedRequest).toHaveBeenCalledWith(
                 'POST',
                 `${config.oAuthEndpoint}/oauth/${mockToken.authId}/refresh`,
-                {},
+                { token: 1 },
                 expect.objectContaining({ domain: 'test-domain' })
             );
         });
@@ -372,7 +372,7 @@ describe('AWSWebCore', () => {
 
             await awsWebCore.refreshCachedToken('', customUrl);
 
-            expect(awsWebCore.signedRequest).toHaveBeenCalledWith('POST', customUrl, {}, expect.any(Object));
+            expect(awsWebCore.signedRequest).toHaveBeenCalledWith('POST', customUrl, { token: 1 }, expect.any(Object));
         });
 
         it('should handle missing authId error', async () => {
@@ -419,7 +419,7 @@ describe('AWSWebCore', () => {
             expect(awsWebCore.signedRequest).toHaveBeenCalledWith(
                 'POST',
                 `${config.oAuthEndpoint}/oauth/test-auth-id/refresh`,
-                {},
+                { token: 1 },
                 expect.objectContaining({
                     target: 'user-123@new-site-id',
                 })
@@ -431,7 +431,7 @@ describe('AWSWebCore', () => {
 
             await awsWebCore.changeUserSite(changeSiteBody, customUrl);
 
-            expect(awsWebCore.signedRequest).toHaveBeenCalledWith('POST', customUrl, {}, expect.any(Object));
+            expect(awsWebCore.signedRequest).toHaveBeenCalledWith('POST', customUrl, { token: 1 }, expect.any(Object));
         });
 
         it('should throw error for invalid changeSiteBody', async () => {
