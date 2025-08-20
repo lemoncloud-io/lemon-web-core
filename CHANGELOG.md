@@ -1,3 +1,9 @@
+## [1.4.2](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.4.1...v1.4.2) (2025-08-20)
+
+### Bug Fixes
+
+- **auth:** add token to oauth refresh requests ([61b5435](https://github.com/lemoncloud-io/lemon-web-core/commit/61b54353ce8843eb980e85f3a312d080e728f41b))
+
 ## [1.4.1](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.4.0...v1.4.1) (2025-06-16)
 
 ### Features
