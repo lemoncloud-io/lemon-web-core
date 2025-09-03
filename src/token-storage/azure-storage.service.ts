@@ -1,6 +1,6 @@
 import { TokenStorageService } from './token-storage.service';
 import { LemonOAuthToken, WebCoreConfig } from '../types';
-import { convertCamelCaseFromSnake, getStorageKey, getStorageKeyVariants, getStorageValue } from '../utils';
+import { convertCamelCaseFromSnake, getStorageKey, getStorageValue } from '../utils';
 
 /**
  * A service to manage Azure-specific storage operations.
@@ -22,17 +22,10 @@ export class AzureStorageService extends TokenStorageService {
     ];
 
     /**
-     * Gets whether to use snake_case based on configuration.
-     */
-    private get useSnakeCase(): boolean {
-        return this.config.defaultCaseStyle !== 'camelCase';
-    }
-
-    /**
-     * Gets the storage key in the configured default case style.
+     * Gets the storage key (always snake_case).
      */
     private getKey(key: string): string {
-        return getStorageKey(this.prefix, key, this.useSnakeCase);
+        return getStorageKey(this.prefix, key);
     }
 
     /**
@@ -40,33 +33,6 @@ export class AzureStorageService extends TokenStorageService {
      */
     private async getStorageItem(key: string): Promise<string> {
         return (await getStorageValue(this.storage, this.prefix, key)) || '';
-    }
-
-    /**
-     * Migrates keys to the configured default case style if needed.
-     */
-    private async migrateKey(key: string): Promise<void> {
-        const { snakeKey, camelKey } = getStorageKeyVariants(this.prefix, key);
-        const snakeValue = await this.storage.getItem(snakeKey);
-        const camelValue = await this.storage.getItem(camelKey);
-
-        if (this.useSnakeCase) {
-            // Prefer snake_case: migrate camelCase to snake_case if needed
-            if (snakeValue && camelValue) {
-                await this.storage.removeItem(camelKey);
-            } else if (!snakeValue && camelValue) {
-                await this.storage.setItem(snakeKey, camelValue);
-                await this.storage.removeItem(camelKey);
-            }
-        } else {
-            // Prefer camelCase: migrate snake_case to camelCase if needed
-            if (snakeValue && camelValue) {
-                await this.storage.removeItem(snakeKey);
-            } else if (snakeValue && !camelValue) {
-                await this.storage.setItem(camelKey, snakeValue);
-                await this.storage.removeItem(snakeKey);
-            }
-        }
     }
 
     constructor(readonly config: WebCoreConfig<'azure'>) {
@@ -152,9 +118,6 @@ export class AzureStorageService extends TokenStorageService {
         const { accountId, authId, credential, identityId, identityToken, accessToken } = token;
         const { hostKey, clientId, Expiration } = credential;
 
-        // Migrate camelCase keys to snake_case before saving new ones
-        await Promise.all(this.credentialKeys.map(key => this.migrateKey(key)));
-
         this.storage.setItem(this.getKey('account_id'), accountId || '');
         this.storage.setItem(this.getKey('auth_id'), authId || '');
         this.storage.setItem(this.getKey('identity_id'), identityId || '');
@@ -179,12 +142,7 @@ export class AzureStorageService extends TokenStorageService {
      * Clears all the cached OAuth tokens from the storage.
      */
     async clearOAuthToken(): Promise<void> {
-        // Clear both snake_case and camelCase variants
-        const removePromises = this.credentialKeys.flatMap(item => {
-            const { snakeKey, camelKey } = getStorageKeyVariants(this.prefix, item);
-            return [this.storage.removeItem(snakeKey), this.storage.removeItem(camelKey)];
-        });
-        await Promise.all(removePromises);
+        await Promise.all(this.credentialKeys.map(item => this.storage.removeItem(this.getKey(item))));
         return;
     }
 }

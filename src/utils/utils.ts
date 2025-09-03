@@ -75,19 +75,13 @@ export const convertSnakeCaseFromCamel = (key: string) => {
     return key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 };
 
-export const getStorageKey = (prefix: string, key: string, useSnakeCase: boolean = true) => {
-    const storageKey = useSnakeCase ? key : convertCamelCaseFromSnake(key);
-    return `${prefix}.${storageKey}`;
-};
-
-export const getStorageKeyVariants = (prefix: string, key: string) => {
-    const snakeKey = `${prefix}.${key}`;
-    const camelKey = `${prefix}.${convertCamelCaseFromSnake(key)}`;
-    return { snakeKey, camelKey };
+export const getStorageKey = (prefix: string, key: string) => {
+    return `${prefix}.${key}`;
 };
 
 export const getStorageValue = async (storage: any, prefix: string, key: string): Promise<string | null> => {
-    const { snakeKey, camelKey } = getStorageKeyVariants(prefix, key);
+    const snakeKey = `${prefix}.${key}`;
+    const camelKey = `${prefix}.${convertCamelCaseFromSnake(key)}`;
 
     // Try snake_case first (backward compatibility)
     const snakeValue = await storage.getItem(snakeKey);
@@ -95,7 +89,7 @@ export const getStorageValue = async (storage: any, prefix: string, key: string)
         return snakeValue;
     }
 
-    // Try camelCase as fallback
+    // Try camelCase as fallback for backward compatibility
     const camelValue = await storage.getItem(camelKey);
     return camelValue;
 };
