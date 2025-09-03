@@ -57,6 +57,11 @@ export type WebCoreServiceMap = {
 export type CloudProvider = keyof WebCoreServiceMap;
 
 /**
+ * Type representing the case style for localStorage keys.
+ */
+export type CaseStyle = 'snake_case' | 'camelCase';
+
+/**
  * Type representing the configuration for the web core.
  * @template T - The cloud provider type.
  */
@@ -66,6 +71,13 @@ export type WebCoreConfig<T extends CloudProvider> = {
     oAuthEndpoint: string;
     region?: string;
     storage?: Storage;
+    /**
+     * Default case style for new localStorage keys.
+     * - 'snake_case': Use snake_case format (e.g., access_key_id)
+     * - 'camelCase': Use camelCase format (e.g., accessKeyId)
+     * @default 'snake_case'
+     */
+    defaultCaseStyle?: CaseStyle;
 };
 
 /**

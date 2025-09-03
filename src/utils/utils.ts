@@ -75,9 +75,9 @@ export const convertSnakeCaseFromCamel = (key: string) => {
     return key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 };
 
-export const getStorageKey = (prefix: string, key: string) => {
-    // Always use snake_case for new storage keys
-    return `${prefix}.${key}`;
+export const getStorageKey = (prefix: string, key: string, useSnakeCase: boolean = true) => {
+    const storageKey = useSnakeCase ? key : convertCamelCaseFromSnake(key);
+    return `${prefix}.${storageKey}`;
 };
 
 export const getStorageKeyVariants = (prefix: string, key: string) => {
