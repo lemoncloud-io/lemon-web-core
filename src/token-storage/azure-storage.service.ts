@@ -67,7 +67,11 @@ export class AzureStorageService extends TokenStorageService {
         return await this.credentialKeys.reduce(async (promise, item) => {
             const result: { [key: string]: string } = await promise;
             const key = this.getKey(item);
-            result[key] = await this.getStorageItem(item);
+            const value = await this.getStorageItem(item);
+            // Only include non-empty values
+            if (value) {
+                result[key] = value;
+            }
             return Promise.resolve(result);
         }, Promise.resolve({}));
     }
