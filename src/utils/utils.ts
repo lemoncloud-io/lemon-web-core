@@ -71,6 +71,35 @@ export const convertCamelCaseFromSnake = (key: string) => {
         .join('');
 };
 
+export const convertSnakeCaseFromCamel = (key: string) => {
+    return key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+};
+
+export const getStorageKey = (prefix: string, key: string) => {
+    // Always use snake_case for new storage keys
+    return `${prefix}.${key}`;
+};
+
+export const getStorageKeyVariants = (prefix: string, key: string) => {
+    const snakeKey = `${prefix}.${key}`;
+    const camelKey = `${prefix}.${convertCamelCaseFromSnake(key)}`;
+    return { snakeKey, camelKey };
+};
+
+export const getStorageValue = async (storage: any, prefix: string, key: string): Promise<string | null> => {
+    const { snakeKey, camelKey } = getStorageKeyVariants(prefix, key);
+
+    // Try snake_case first (backward compatibility)
+    const snakeValue = await storage.getItem(snakeKey);
+    if (snakeValue) {
+        return snakeValue;
+    }
+
+    // Try camelCase as fallback
+    const camelValue = await storage.getItem(camelKey);
+    return camelValue;
+};
+
 // NOTE: for native login test
 export const calcTestSignature = (
     payload: SignaturePayload,

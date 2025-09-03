@@ -1,6 +1,6 @@
 import { LemonCredentials, LemonKMS, LemonOAuthToken, WebCoreConfig } from '../types';
 import { REGION_KEY, TokenStorageService, USE_X_LEMON_IDENTITY_KEY } from './token-storage.service';
-import { convertCamelCaseFromSnake } from '../utils';
+import { convertCamelCaseFromSnake, getStorageKey, getStorageKeyVariants, getStorageValue } from '../utils';
 
 /**
  * AWS-specific token storage service that manages OAuth tokens, credentials, and KMS configuration.
@@ -24,6 +24,39 @@ export class AWSStorageService extends TokenStorageService {
         'issued_time',
         'kms_arn',
     ];
+
+    /**
+     * Gets the storage key (always snake_case).
+     */
+    private getKey(key: string): string {
+        return getStorageKey(this.prefix, key);
+    }
+
+    /**
+     * Gets a value from storage, checking both snake_case and camelCase formats for backward compatibility.
+     */
+    private async getStorageItem(key: string): Promise<string> {
+        return (await getStorageValue(this.storage, this.prefix, key)) || '';
+    }
+
+    /**
+     * Migrates camelCase keys to snake_case if needed.
+     */
+    private async migrateKey(key: string): Promise<void> {
+        const { snakeKey, camelKey } = getStorageKeyVariants(this.prefix, key);
+        const snakeValue = await this.storage.getItem(snakeKey);
+        const camelValue = await this.storage.getItem(camelKey);
+
+        // If both exist, prefer snake_case and remove camelCase
+        if (snakeValue && camelValue) {
+            await this.storage.removeItem(camelKey);
+        }
+        // If only camelCase exists, migrate it to snake_case
+        else if (!snakeValue && camelValue) {
+            await this.storage.setItem(snakeKey, camelValue);
+            await this.storage.removeItem(camelKey);
+        }
+    }
 
     /**
      * Creates an instance of AWSStorageService.
@@ -51,7 +84,12 @@ export class AWSStorageService extends TokenStorageService {
     async getAllItems() {
         return await this.credentialKeys.reduce(async (promise, item) => {
             const result: { [key: string]: string } = await promise.then();
-            result[`${this.prefix}.${item}`] = await this.storage.getItem(`${this.prefix}.${item}`);
+            const key = this.getKey(item);
+            const value = await this.getStorageItem(item);
+            // Only include non-empty values
+            if (value) {
+                result[key] = value;
+            }
             return Promise.resolve(result);
         }, Promise.resolve({}));
     }
@@ -62,10 +100,10 @@ export class AWSStorageService extends TokenStorageService {
      * @returns {Promise<boolean>} Promise resolving to true if all required tokens are cached
      */
     async hasCachedToken(): Promise<boolean> {
-        const expiredTime = await this.storage.getItem(`${this.prefix}.expired_time`);
-        const accessKeyId = await this.storage.getItem(`${this.prefix}.access_key_id`);
-        const secretKey = await this.storage.getItem(`${this.prefix}.secret_key`);
-        const identityToken = await this.storage.getItem(`${this.prefix}.identity_token`);
+        const expiredTime = await this.getStorageItem('expired_time');
+        const accessKeyId = await this.getStorageItem('access_key_id');
+        const secretKey = await this.getStorageItem('secret_key');
+        const identityToken = await this.getStorageItem('identity_token');
 
         return !!accessKeyId && !!secretKey && !!expiredTime && !!identityToken;
     }
@@ -76,7 +114,7 @@ export class AWSStorageService extends TokenStorageService {
      * @returns {Promise<boolean>} Promise resolving to true if token should be refreshed
      */
     async shouldRefreshToken(): Promise<boolean> {
-        const expiredTime = +(await this.storage.getItem(`${this.prefix}.expired_time`));
+        const expiredTime = +(await this.getStorageItem('expired_time'));
         const now = new Date().getTime();
 
         const noExpirationInfo = !expiredTime || expiredTime <= 0;
@@ -93,9 +131,9 @@ export class AWSStorageService extends TokenStorageService {
      * @returns {Promise<LemonCredentials>} Promise resolving to AWS credentials object
      */
     async getCachedCredentials(): Promise<LemonCredentials> {
-        const AccessKeyId = await this.storage.getItem(`${this.prefix}.access_key_id`);
-        const SecretKey = await this.storage.getItem(`${this.prefix}.secret_key`);
-        const SessionToken = await this.storage.getItem(`${this.prefix}.session_token`);
+        const AccessKeyId = await this.getStorageItem('access_key_id');
+        const SecretKey = await this.getStorageItem('secret_key');
+        const SessionToken = await this.getStorageItem('session_token');
         return { AccessKeyId, SecretKey, SessionToken } as LemonCredentials;
     }
 
@@ -108,13 +146,13 @@ export class AWSStorageService extends TokenStorageService {
     async getCachedOAuthToken(): Promise<LemonOAuthToken> {
         const result: any = await this.credentialKeys.reduce(async (promise, item) => {
             const tmp: { [key: string]: string } = await promise.then();
-            tmp[convertCamelCaseFromSnake(item)] = await this.storage.getItem(`${this.prefix}.${item}`);
+            tmp[convertCamelCaseFromSnake(item)] = await this.getStorageItem(item);
             return Promise.resolve(tmp);
         }, Promise.resolve({}));
 
-        const AccessKeyId = await this.storage.getItem(`${this.prefix}.access_key_id`);
-        const SecretKey = await this.storage.getItem(`${this.prefix}.secret_key`);
-        const SessionToken = await this.storage.getItem(`${this.prefix}.session_token`);
+        const AccessKeyId = await this.getStorageItem('access_key_id');
+        const SecretKey = await this.getStorageItem('secret_key');
+        const SessionToken = await this.getStorageItem('session_token');
         result.credential = { AccessKeyId, SecretKey, SessionToken };
 
         delete result.accessKeyId;
@@ -136,22 +174,25 @@ export class AWSStorageService extends TokenStorageService {
         const { accountId, authId, credential, identityId, identityPoolId, identityToken } = token;
         const { AccessKeyId, SecretKey, SessionToken, Expiration } = credential;
 
-        this.storage.setItem(`${this.prefix}.account_id`, accountId || '');
-        this.storage.setItem(`${this.prefix}.auth_id`, authId || '');
-        this.storage.setItem(`${this.prefix}.identity_id`, identityId || '');
-        this.storage.setItem(`${this.prefix}.identity_token`, identityToken || '');
+        // Migrate camelCase keys to snake_case before saving new ones
+        await Promise.all(this.credentialKeys.map(key => this.migrateKey(key)));
 
-        this.storage.setItem(`${this.prefix}.identity_pool_id`, identityPoolId || '');
-        this.storage.setItem(`${this.prefix}.access_key_id`, AccessKeyId || '');
-        this.storage.setItem(`${this.prefix}.secret_key`, SecretKey || '');
-        this.storage.setItem(`${this.prefix}.session_token`, SessionToken || '');
+        this.storage.setItem(this.getKey('account_id'), accountId || '');
+        this.storage.setItem(this.getKey('auth_id'), authId || '');
+        this.storage.setItem(this.getKey('identity_id'), identityId || '');
+        this.storage.setItem(this.getKey('identity_token'), identityToken || '');
+
+        this.storage.setItem(this.getKey('identity_pool_id'), identityPoolId || '');
+        this.storage.setItem(this.getKey('access_key_id'), AccessKeyId || '');
+        this.storage.setItem(this.getKey('secret_key'), SecretKey || '');
+        this.storage.setItem(this.getKey('session_token'), SessionToken || '');
 
         const expiredTime = this.calculateTokenExpiration(Expiration, identityToken);
-        this.storage.setItem(`${this.prefix}.expired_time`, expiredTime.toString());
+        this.storage.setItem(this.getKey('expired_time'), expiredTime.toString());
 
         const issuedTime = this.calculateTokenIssuedTime(identityToken);
         if (issuedTime) {
-            this.storage.setItem(`${this.prefix}.issued_time`, issuedTime.toString());
+            this.storage.setItem(this.getKey('issued_time'), issuedTime.toString());
         }
 
         return;
@@ -163,7 +204,12 @@ export class AWSStorageService extends TokenStorageService {
      * @returns {Promise<void>} Promise that resolves when all tokens are cleared
      */
     async clearOAuthToken(): Promise<void> {
-        await Promise.all(this.credentialKeys.map(item => this.storage.removeItem(`${this.prefix}.${item}`)));
+        // Clear both snake_case and camelCase variants
+        const removePromises = this.credentialKeys.flatMap(item => {
+            const { snakeKey, camelKey } = getStorageKeyVariants(this.prefix, item);
+            return [this.storage.removeItem(snakeKey), this.storage.removeItem(camelKey)];
+        });
+        await Promise.all(removePromises);
         return;
     }
 
@@ -175,7 +221,7 @@ export class AWSStorageService extends TokenStorageService {
      */
     async saveKMS(kms: LemonKMS): Promise<void> {
         const kmsArn = kms.arn;
-        this.storage.setItem(`${this.prefix}.kms_arn`, kmsArn || '');
+        this.storage.setItem(this.getKey('kms_arn'), kmsArn || '');
         return;
     }
 }

@@ -82,6 +82,11 @@ export interface LemonCredentials {
      */
     hostKey?: string;
     /**
+     * The host key associated with the credentials for Azure (optional).
+     * @deprecated Use hostKey instead
+     */
+    HostKey?: string;
+    /**
      * The client id for Azure (optional).
      */
     clientId?: string;
