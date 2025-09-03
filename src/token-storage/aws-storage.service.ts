@@ -26,10 +26,17 @@ export class AWSStorageService extends TokenStorageService {
     ];
 
     /**
-     * Gets the storage key (always snake_case).
+     * Gets whether to use snake_case based on configuration.
+     */
+    private get useSnakeCase(): boolean {
+        return this.config.defaultCaseStyle !== 'camelCase';
+    }
+
+    /**
+     * Gets the storage key in the configured default case style.
      */
     private getKey(key: string): string {
-        return getStorageKey(this.prefix, key);
+        return getStorageKey(this.prefix, key, this.useSnakeCase);
     }
 
     /**
@@ -40,21 +47,29 @@ export class AWSStorageService extends TokenStorageService {
     }
 
     /**
-     * Migrates camelCase keys to snake_case if needed.
+     * Migrates keys to the configured default case style if needed.
      */
     private async migrateKey(key: string): Promise<void> {
         const { snakeKey, camelKey } = getStorageKeyVariants(this.prefix, key);
         const snakeValue = await this.storage.getItem(snakeKey);
         const camelValue = await this.storage.getItem(camelKey);
 
-        // If both exist, prefer snake_case and remove camelCase
-        if (snakeValue && camelValue) {
-            await this.storage.removeItem(camelKey);
-        }
-        // If only camelCase exists, migrate it to snake_case
-        else if (!snakeValue && camelValue) {
-            await this.storage.setItem(snakeKey, camelValue);
-            await this.storage.removeItem(camelKey);
+        if (this.useSnakeCase) {
+            // Prefer snake_case: migrate camelCase to snake_case if needed
+            if (snakeValue && camelValue) {
+                await this.storage.removeItem(camelKey);
+            } else if (!snakeValue && camelValue) {
+                await this.storage.setItem(snakeKey, camelValue);
+                await this.storage.removeItem(camelKey);
+            }
+        } else {
+            // Prefer camelCase: migrate snake_case to camelCase if needed
+            if (snakeValue && camelValue) {
+                await this.storage.removeItem(snakeKey);
+            } else if (snakeValue && !camelValue) {
+                await this.storage.setItem(camelKey, snakeValue);
+                await this.storage.removeItem(snakeKey);
+            }
         }
     }
 
