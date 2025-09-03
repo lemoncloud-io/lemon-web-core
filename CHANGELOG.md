@@ -1,3 +1,5 @@
+## [1.5.1](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.5.0...v1.5.1) (2025-09-03)
+
 # [1.5.0](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.4.2...v1.5.0) (2025-08-20)
 
 ### Features
