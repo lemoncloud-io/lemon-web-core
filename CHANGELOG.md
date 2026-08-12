@@ -1,3 +1,9 @@
+## [1.5.4](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.5.3...v1.5.4) (2026-08-12)
+
+### Bug Fixes
+
+- **auth:** keep cached identity values when refresh response carries falsy ones ([3381347](https://github.com/lemoncloud-io/lemon-web-core/commit/338134761186af3678ccd576b5cb96ac03279251))
+
 ## [1.5.3](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.5.2...v1.5.3) (2025-09-03)
 
 ## [1.5.2](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.5.1...v1.5.2) (2025-09-03)
