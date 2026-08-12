@@ -139,8 +139,9 @@ export class AWSHttpRequestBuilder {
      * Gets the signed AWS client.
      * @private
      * @param {string} [endpoint] - The endpoint for the client.
-     * @returns {Promise<any>} - The signed AWS client.
-     * @throws {Error} If endpoint is not provided or signed client is not available.
+     * @returns {Promise<any>} - The signed AWS client, or `false` when token storage holds no
+     *                           credentials, in which case the request goes out unsigned.
+     * @throws {Error} If endpoint is not provided.
      */
     private async getSignedClient(endpoint?: string): Promise<any> {
         if (!endpoint) {

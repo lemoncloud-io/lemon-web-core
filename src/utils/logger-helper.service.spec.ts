@@ -28,6 +28,23 @@ describe('LoggerHelperService', () => {
             ['%s then extras', ['used', 'left', 'over']],
             ['%d then extras', [1, 2]],
             ['count is %s', [7]],
+            // Types the logger can be handed that the placeholders treat specially. %d used to throw
+            // on a symbol, which is the worst thing a logger can do.
+            ['%d symbol', [Symbol('sym')]],
+            ['%i symbol', [Symbol('sym')]],
+            ['%f symbol', [Symbol('sym')]],
+            ['%s symbol', [Symbol('sym')]],
+            ['%d bigint', [BigInt(1)]],
+            ['%i bigint', [BigInt(2)]],
+            ['%s bigint', [BigInt(3)]],
+            ['%f bigint', [BigInt(4)]],
+            ['%j string', ['abc']],
+            ['%j number', [1]],
+            ['%j null', [null]],
+            ['%j undefined', [undefined]],
+            ['%s null', [null]],
+            ['%s undefined', [undefined]],
+            ['%d unparseable', ['12abc']],
         ];
 
         it.each(equivalent)('should match util.format for %p', (message, params) => {
@@ -38,6 +55,12 @@ describe('LoggerHelperService', () => {
         it('should render objects as JSON rather than inspect output', () => {
             expect(helper.formatMessage('%o object', [{ nested: { b: 2 } }])).toBe('{"nested":{"b":2}} object');
             expect(helper.formatMessage('appended', [{ a: 1 }])).toBe('appended {"a":1}');
+        });
+
+        // Documented deviation: util.format throws here, and a logger should not take down its caller.
+        it('should fall back to String() when %j cannot serialize the value', () => {
+            expect(() => nodeFormat('%j', BigInt(1))).toThrow('Do not know how to serialize a BigInt');
+            expect(helper.formatMessage('%j value', [BigInt(1)])).toBe('1 value');
         });
 
         it('should survive a circular object instead of throwing', () => {

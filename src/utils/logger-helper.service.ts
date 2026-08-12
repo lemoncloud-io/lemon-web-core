@@ -26,6 +26,15 @@ export const BROWSER_COLORS = {
 
 const PLACEHOLDER = /%([sdifjoO%])/g;
 
+const jsonify = (value: unknown): string => {
+    try {
+        return String(JSON.stringify(value));
+    } catch (error) {
+        // A circular structure is the case util.format also renders rather than throws.
+        return error instanceof TypeError && error.message.includes('circular') ? '[Circular]' : String(value);
+    }
+};
+
 const stringify = (value: unknown): string => {
     if (typeof value === 'string') {
         return value;
@@ -52,9 +61,16 @@ const stringify = (value: unknown): string => {
  * bundler to shim it. Only the subset the logger uses is implemented: the `%s %d %i %f %j %o %O %%`
  * placeholders, with unconsumed arguments appended space-separated.
  *
- * One deliberate deviation from `util.format`: objects render as JSON rather than through
- * `util.inspect`, so `{ a: 1 }` prints as `{"a":1}`. Reproducing `inspect` (depth limits, circular
- * references, class names) is not worth carrying in a browser bundle for log output.
+ * Two deliberate deviations from `util.format`, both asserted in the spec:
+ *
+ * 1. Objects render as JSON rather than through `util.inspect`, so `{ a: 1 }` prints as `{"a":1}`.
+ *    Reproducing `inspect` (depth limits, circular references, class names) is not worth carrying in
+ *    a browser bundle for log output. This covers `%s`, `%o`, `%O` and appended arguments.
+ * 2. `%j` on a value `JSON.stringify` refuses outright, such as a bigint, falls back to `String()`.
+ *    `util.format` throws there, and a logger should not be able to take down its caller.
+ *
+ * Everything else the spec can reach matches `util.format`, including the numeric placeholders on
+ * symbols and bigints and `%j` on a circular structure.
  */
 const format = (message: string, ...params: unknown[]): string => {
     // util.format leaves the message untouched when there is nothing to substitute, so `%%` only
@@ -72,13 +88,27 @@ const format = (message: string, ...params: unknown[]): string => {
             return placeholder;
         }
         const value = params[consumed++];
+        const isNumericPlaceholder = kind === 'd' || kind === 'i' || kind === 'f';
+        if (isNumericPlaceholder) {
+            // %f is the odd one out: util.format parses a bigint as a plain float, keeping no suffix.
+            if (typeof value === 'bigint') {
+                return kind === 'f' ? String(parseFloat(String(value))) : `${value}n`;
+            }
+            // Number(symbol) throws, and a logger that throws is worse than one that prints NaN.
+            if (typeof value === 'symbol') {
+                return 'NaN';
+            }
+        }
+
         switch (kind) {
             case 'd':
-                return typeof value === 'bigint' ? `${value}n` : String(Number(value));
+                return String(Number(value));
             case 'i':
                 return String(parseInt(String(value), 10));
             case 'f':
                 return String(parseFloat(String(value)));
+            case 'j':
+                return jsonify(value);
             default:
                 return stringify(value);
         }
