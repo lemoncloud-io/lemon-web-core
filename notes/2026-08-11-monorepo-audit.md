@@ -15,18 +15,19 @@ carried over from an earlier survey are marked **unverified here** where they ap
 The findings were re-checked against source and against the packed artifact. Four claims in the
 original write-up were wrong and have been corrected in place, each marked **Correction**.
 
-| Finding | State                                                                       | Released in  |
-| ------- | --------------------------------------------------------------------------- | ------------ |
-| 1       | **Fixed** — `aws-web.core.ts` spread reordered, regression test added       | 1.5.4        |
-| 3       | **Fixed** — conditional `exports` + root `main`/`module`/`types`            | 1.5.4        |
-| 4       | **Fixed** — `peerDependencies` dropped, `dependencies` kept                 | 1.5.4        |
-| 5       | **Fixed** — `test:ci` script, release workflow lints and tests, `strict` on | 1.5.4 · next |
-| 2       | **Fixed** — `strict: true`, all errors resolved                             | next         |
-| 6       | **Fixed** — `util` and `aws-sdk` imports both gone                          | next         |
-| 7       | **Fixed** — no global credential slot; token storage is the single source   | next         |
-| 8       | **Withdrawn** — the claim does not hold; see that section                   | —            |
+| Finding | State                                                                       | Released in   |
+| ------- | --------------------------------------------------------------------------- | ------------- |
+| 1       | **Fixed** — `aws-web.core.ts` spread reordered, regression test added       | 1.5.4         |
+| 3       | **Fixed** — conditional `exports` + root `main`/`module`/`types`            | 1.5.4         |
+| 4       | **Fixed** — `peerDependencies` dropped, `dependencies` kept                 | 1.5.4         |
+| 5       | **Fixed** — `test:ci` script, release workflow lints and tests, `strict` on | 1.5.4 · 2.0.0 |
+| 2       | **Fixed** — `strict: true`, all errors resolved                             | 2.0.0         |
+| 6       | **Fixed** — `util` and `aws-sdk` imports both gone                          | 2.0.0         |
+| 7       | **Fixed** — no global credential slot; token storage is the single source   | 2.0.0         |
+| 8       | **Withdrawn** — the claim does not hold; see that section                   | —             |
 
-"next" is the minor release this branch produces. The `1.5.4` row content is live on npm.
+`1.5.4` is live on npm. `2.0.0` is what this branch produces — major rather than minor because the
+public return types change; see the release section at the end.
 
 ---
 
@@ -329,7 +330,11 @@ Both imports are gone; `dependencies` is now `axios`, `crypto-js`, `jwt-decode`.
     statically-constructed credentials, so its replacement is a presence check on the two required
     keys.
 
-No shim is required now: line 1 of `dist/index.js` is `crypto-js`, `jwt-decode` and `axios` only.
+The bundler shim consumers carry for this package is no longer needed. Line 1 of `dist/index.js`
+imports `crypto-js`, `jwt-decode` and `axios` and nothing else, so `global: 'globalThis'` has nothing
+left to serve. `'process.env': {}` likewise: the only `process` reference left in the bundle is
+`process.versions` in the logger's `isNode()` check, and it sits behind `typeof process !== 'undefined'`,
+so an environment without `process` takes the browser branch rather than throwing.
 
 ---
 
@@ -384,7 +389,7 @@ Every finding has now been acted on, in two releases.
 3. **Findings 2, 6, 7** — `strict`, the browser-hostile imports and the global credential slot.
    These landed together because they are the same knot: removing aws-sdk deleted three of the
    `strict` errors outright, and `strict` is what would have caught finding 1 at compile time.
-   **Done, next release.**
+   **Done, 2.0.0.**
 
 Finding 8 is withdrawn and needs nothing.
 
@@ -393,8 +398,13 @@ Finding 8 is withdrawn and needs nothing.
 Relevant to any plan that names a version, because this repository overrides the preset. The
 `releaseRules` in `package.json` map `feat`, `fix`, `refactor` and `chore` all to **patch**; a minor
 bump requires the commit **scope** `minor` (`feat(minor): …`) and a major requires scope `major`.
-So a minor release is not something `feat:` produces here — the aws-sdk removal needed
-`feat(minor):` to land as one. Two further consequences:
+So a minor release is not something `feat:` produces here; it needs `feat(minor):`.
+
+The aws-sdk removal went out as **2.0.0** rather than the minor first planned. A `BREAKING CHANGE:`
+footer in the commit body outranks all of this: commit-analyzer prepends the preset's own
+`{ breaking: true, release: 'major' }` ahead of the custom `releaseRules`, so the footer wins. That
+is the right answer here — the public methods changed return type — but it is worth knowing that
+the footer, not the scope, is what decided it. Two further consequences:
 
 -   `docs:` has no rule and no release under the conventionalcommits preset. A branch that lands on
     `main` with only `docs:` commits publishes nothing — worth checking when a release seems to have
