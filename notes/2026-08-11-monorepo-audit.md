@@ -147,8 +147,8 @@ done by editing `tsconfig.json` rather than by a fresh config.
 The specs were separately reported as 233 errors. Those are missing jest globals, an artefact of the
 monorepo running vitest; compiled here with `"types": ["node", "jest"]` they produce none.
 
-Tightening `strict` here is a bounded piece of work, and `TS2783` is the reason it was worth
-considering: the previous `strict: false` is what let finding 1 through.
+Tightening `strict` here is a bounded piece of work, and `TS2783` is the reason it is worth doing:
+`tsconfig.json` still sets `"strict": false`, and that is what let finding 1 through.
 
 ---
 
@@ -219,10 +219,12 @@ pre-push hook, which `--no-verify` skips.
 
 **Correction.** The original text said the build does not run either. It does: `prepack`
 (`pnpm build && clean-pkg-json`) is invoked by npm during publish, so a compile break already fails
-the release. The proof is in the published metadata — `1.5.3` on npm has `scripts`,
-`devDependencies` and `files` stripped, which is `clean-pkg-json`'s doing. What the lane is missing
-is tests and lint, not the build. (One local consequence: running `npm pack` by hand rewrites the
-working `package.json` in place. Restore it afterwards.)
+the release. The proof is in the published tarball — `npm pack @lemoncloud/lemon-web-core@1.5.3`
+then reading `package/package.json` out of it shows `scripts`, `devDependencies` and the
+`release` block stripped, which is `clean-pkg-json`'s doing. (`files` survives; it is absent from
+`npm view` output whether or not it was published, so `npm view` cannot settle this question — the
+tarball can.) What the lane is missing is tests and lint, not the build. One local consequence:
+running `npm pack` by hand rewrites the working `package.json` in place. Restore it afterwards.
 
 Note also that `tsup` generates the declarations under this repository's `strict: false`, so the
 build gate is weaker than finding 2's numbers might suggest.
