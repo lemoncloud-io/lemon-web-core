@@ -1,11 +1,13 @@
 import { AWSWebCore } from './aws-web.core';
 import { AzureWebCore } from './azure-web.core';
-import { CloudProvider, WebCoreConfig, WebCoreConstructor, WebCoreService, WebCoreServiceMap } from '../types';
+import { CloudProvider, WebCoreConfig, WebCoreConstructor, WebCoreServiceMap } from '../types';
 
 /**
  * A map of cloud provider to their corresponding WebCore constructor.
+ * Each entry is keyed to its own provider, so `aws` maps to a constructor taking `WebCoreConfig<'aws'>`
+ * rather than one taking any provider's config.
  */
-const webCoreMap: Record<CloudProvider, WebCoreConstructor<WebCoreService>> = {
+const webCoreMap: { [T in CloudProvider]: WebCoreConstructor<T> } = {
     aws: AWSWebCore,
     azure: AzureWebCore,
 };
@@ -23,7 +25,7 @@ export class WebCoreFactory {
      */
     static create<T extends CloudProvider>(config: WebCoreConfig<T>): WebCoreServiceMap[T] {
         const { cloud } = config;
-        const ServiceConstructor = webCoreMap[cloud] as WebCoreConstructor<WebCoreServiceMap[T]>;
+        const ServiceConstructor = webCoreMap[cloud];
         if (!ServiceConstructor) {
             throw new Error('Unsupported cloud provider');
         }

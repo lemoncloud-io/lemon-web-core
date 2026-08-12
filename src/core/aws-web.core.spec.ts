@@ -2,19 +2,12 @@ import { AWSWebCore } from '../core';
 import { LemonCredentials, LemonKMS, LemonOAuthToken, WebCoreConfig } from '../types';
 import { AWSStorageService } from '../token-storage';
 import { LoggerService } from '../utils';
-import AWS from 'aws-sdk/global.js';
 import axios from 'axios';
 
 // Mock dependencies
 jest.mock('../token-storage');
 jest.mock('../utils');
 jest.mock('axios');
-jest.mock('aws-sdk/global.js', () => ({
-    config: {
-        credentials: null,
-    },
-    Credentials: jest.fn(),
-}));
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 const MockedAWSStorageService = AWSStorageService as jest.MockedClass<typeof AWSStorageService>;
@@ -254,77 +247,89 @@ describe('AWSWebCore', () => {
             expect(result).toBe(false);
         });
 
-        it('should check AWS credentials when no refresh needed', async () => {
+        it('should check cached credentials when no refresh needed', async () => {
             mockStorageService.hasCachedToken.mockResolvedValue(true);
             mockStorageService.shouldRefreshToken.mockResolvedValue(false);
-
-            const mockCredentials = {
-                get: jest.fn(callback => callback(null)),
-            };
-            (AWS.config as any).credentials = mockCredentials;
+            mockStorageService.getCachedCredentials.mockResolvedValue(mockCredentials);
 
             const result = await awsWebCore.isAuthenticated();
 
             expect(result).toBe(true);
-            expect(mockCredentials.get).toHaveBeenCalled();
+            expect(mockStorageService.getCachedCredentials).toHaveBeenCalled();
         });
 
-        it('should handle AWS credentials error', async () => {
+        it('should return false when the cached credentials are incomplete', async () => {
             mockStorageService.hasCachedToken.mockResolvedValue(true);
             mockStorageService.shouldRefreshToken.mockResolvedValue(false);
-
-            const error = new Error('AWS credentials error');
-            const mockCredentials = {
-                get: jest.fn(callback => callback(error)),
-            };
-            (AWS.config as any).credentials = mockCredentials;
+            mockStorageService.getCachedCredentials.mockResolvedValue({
+                ...mockCredentials,
+                SecretKey: '',
+            });
 
             const result = await awsWebCore.isAuthenticated();
 
             expect(result).toBe(false);
-            expect(mockLogger.error).toHaveBeenCalledWith('get AWSConfig.credentials error: ', error);
+        });
+
+        it('should return false when reading the cached credentials throws', async () => {
+            mockStorageService.hasCachedToken.mockResolvedValue(true);
+            mockStorageService.shouldRefreshToken.mockResolvedValue(false);
+            const error = new Error('storage unavailable');
+            mockStorageService.getCachedCredentials.mockRejectedValue(error);
+
+            const result = await awsWebCore.isAuthenticated();
+
+            expect(result).toBe(false);
+            expect(mockLogger.error).toHaveBeenCalledWith('isAuthenticated error:', error);
         });
     });
 
     describe('buildCredentialsByToken', () => {
-        it('should build AWS credentials from token successfully', async () => {
-            const mockAWSCredentials = new AWS.Credentials('key', 'secret', 'token');
-            (AWS.config as any).credentials = mockAWSCredentials;
-
-            jest.spyOn(awsWebCore as any, 'buildAWSCredentialsByToken').mockResolvedValue(undefined);
+        it('should persist the token and return the credentials it carries', async () => {
+            mockStorageService.saveOAuthToken.mockResolvedValue(undefined);
 
             const result = await awsWebCore.buildCredentialsByToken(mockToken);
 
-            expect(result).toBe(mockAWSCredentials);
+            expect(result).toBe(mockToken.credential);
+            expect(mockStorageService.saveOAuthToken).toHaveBeenCalledWith(mockToken);
             expect(mockLogger.log).toHaveBeenCalledWith('buildCredentialsByToken()...');
         });
 
-        it('should throw error when AWS credentials are not built', async () => {
-            (AWS.config as any).credentials = null;
-            jest.spyOn(awsWebCore as any, 'buildAWSCredentialsByToken').mockResolvedValue(undefined);
+        it('should reject a token with no access key without persisting it', async () => {
+            const tokenWithoutKey = { ...mockToken, credential: { ...mockCredentials, AccessKeyId: '' } };
 
-            await expect(awsWebCore.buildCredentialsByToken(mockToken)).rejects.toThrow('Failed to build AWS credentials');
+            await expect(awsWebCore.buildCredentialsByToken(tokenWithoutKey)).rejects.toThrow('.AccessKeyId (string) is required!');
+            expect(mockStorageService.saveOAuthToken).not.toHaveBeenCalled();
+        });
+
+        it('should reject a token with no secret key without persisting it', async () => {
+            const tokenWithoutSecret = { ...mockToken, credential: { ...mockCredentials, SecretKey: '' } };
+
+            await expect(awsWebCore.buildCredentialsByToken(tokenWithoutSecret)).rejects.toThrow('.SecretKey (string) is required!');
+            expect(mockStorageService.saveOAuthToken).not.toHaveBeenCalled();
         });
     });
 
     describe('buildCredentialsByStorage', () => {
-        it('should build AWS credentials from storage successfully', async () => {
-            const mockAWSCredentials = new AWS.Credentials('key', 'secret', 'token');
-            (AWS.config as any).credentials = mockAWSCredentials;
-
-            jest.spyOn(awsWebCore as any, 'buildAWSCredentialsByStorage').mockResolvedValue(undefined);
+        it('should return the cached credentials', async () => {
+            mockStorageService.getCachedCredentials.mockResolvedValue(mockCredentials);
 
             const result = await awsWebCore.buildCredentialsByStorage();
 
-            expect(result).toBe(mockAWSCredentials);
+            expect(result).toBe(mockCredentials);
             expect(mockLogger.log).toHaveBeenCalledWith('buildCredentialsByStorage()...');
         });
 
-        it('should throw error when credentials cannot be built from storage', async () => {
-            (AWS.config as any).credentials = null;
-            jest.spyOn(awsWebCore as any, 'buildAWSCredentialsByStorage').mockResolvedValue(undefined);
+        it('should throw when the cached credentials have no access key', async () => {
+            mockStorageService.getCachedCredentials.mockResolvedValue({ ...mockCredentials, AccessKeyId: '' });
 
-            await expect(awsWebCore.buildCredentialsByStorage()).rejects.toThrow('Failed to build AWS credentials from storage');
+            await expect(awsWebCore.buildCredentialsByStorage()).rejects.toThrow('.AccessKeyId (string) is required!');
+        });
+
+        it('should throw when the cached credentials have no secret key', async () => {
+            mockStorageService.getCachedCredentials.mockResolvedValue({ ...mockCredentials, SecretKey: '' });
+
+            await expect(awsWebCore.buildCredentialsByStorage()).rejects.toThrow('.SecretKey (string) is required!');
         });
     });
 
@@ -479,12 +484,11 @@ describe('AWSWebCore', () => {
     });
 
     describe('logout', () => {
-        it('should clear AWS credentials and cached tokens', async () => {
+        it('should clear cached tokens, which is what leaves requests unsigned', async () => {
             mockStorageService.clearOAuthToken.mockResolvedValue(undefined);
 
             await awsWebCore.logout();
 
-            expect(AWS.config.credentials).toBeNull();
             expect(mockStorageService.clearOAuthToken).toHaveBeenCalled();
         });
     });

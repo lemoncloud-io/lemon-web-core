@@ -14,11 +14,47 @@ describe('AWSHttpRequestBuilder', () => {
     let config: AxiosRequestConfig;
 
     beforeEach(() => {
+        jest.clearAllMocks();
+        // 'should execute request correctly' below leaves axios.create resolving a promise, so restore
+        // the implementation here rather than letting the tests depend on their order in this file.
+        (axios.create as jest.Mock).mockImplementation(() => axios);
+
         tokenStorage = new AWSStorageService({ project: 'test', cloud: 'aws', oAuthEndpoint: 'http://localhost' });
         config = {
             method: 'GET',
             baseURL: 'http://localhost',
         };
+    });
+
+    const executeAndCaptureConfig = async (credentials: { AccessKeyId: string; SecretKey: string; SessionToken: string }) => {
+        jest.spyOn(tokenStorage, 'getCachedCredentials').mockResolvedValue(credentials);
+        jest.spyOn(tokenStorage, 'getItem').mockResolvedValue('');
+
+        const mockedRequest = axios.request as jest.Mock;
+        mockedRequest.mockResolvedValue({ data: 'response' });
+
+        await new AWSHttpRequestBuilder(tokenStorage, config).execute();
+        return mockedRequest.mock.calls[mockedRequest.mock.calls.length - 1][0];
+    };
+
+    // Signing reads credentials from token storage. It used to read the AWS.config global, which meant
+    // a page that never called init() sent unsigned requests even with credentials in storage.
+    it('should sign the request with the credentials held in token storage', async () => {
+        const sentConfig = await executeAndCaptureConfig({
+            AccessKeyId: 'AKIAEXAMPLE',
+            SecretKey: 'secret-key',
+            SessionToken: 'session-token',
+        });
+
+        expect(sentConfig.headers.Authorization).toContain('AWS4-HMAC-SHA256');
+        expect(sentConfig.headers.Authorization).toContain('AKIAEXAMPLE');
+        expect(sentConfig.headers['x-amz-security-token']).toBe('session-token');
+    });
+
+    it('should send an unsigned request when token storage holds no credentials', async () => {
+        const sentConfig = await executeAndCaptureConfig({ AccessKeyId: '', SecretKey: '', SessionToken: '' });
+
+        expect(sentConfig.headers.Authorization).toBeUndefined();
     });
 
     it('should set headers correctly', async () => {

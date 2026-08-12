@@ -122,6 +122,7 @@
         "@semantic-release/github": "^9.2.6",
         "@semantic-release/npm": "^11.0.3",
         "@semantic-release/release-notes-generator": "^12.1.0",
+        "@types/crypto-js": "^4.2.2",
         "@types/jest": "^29.5.11",
         "@types/node": "^20.9.0",
         "@typescript-eslint/eslint-plugin": "^6.2.0",
@@ -143,7 +144,6 @@
         "typescript": "^5.1.6"
     },
     "dependencies": {
-        "aws-sdk": "^2.1630.0",
         "axios": "^1.7.2",
         "crypto-js": "^4.2.0",
         "jwt-decode": "^4.0.0"

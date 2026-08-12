@@ -1,4 +1,3 @@
-import { format } from 'util';
 import { LogType } from './logger.service';
 
 export const NODE_COLORS = {
@@ -23,6 +22,70 @@ export const BROWSER_COLORS = {
     Cyan: 'SkyBlue',
     Grey: 'DimGrey',
     White: 'White',
+};
+
+const PLACEHOLDER = /%([sdifjoO%])/g;
+
+const stringify = (value: unknown): string => {
+    if (typeof value === 'string') {
+        return value;
+    }
+    if (typeof value === 'bigint') {
+        return `${value}n`;
+    }
+    if (value instanceof Error) {
+        return value.stack || value.message;
+    }
+    if (typeof value === 'object' && value !== null) {
+        try {
+            return JSON.stringify(value);
+        } catch {
+            return String(value);
+        }
+    }
+    return String(value);
+};
+
+/**
+ * printf-style formatting, replacing Node's `util.format`.
+ * `util` is a Node builtin, and importing it at the top level of a browser library leaves the
+ * bundler to shim it. Only the subset the logger uses is implemented: the `%s %d %i %f %j %o %O %%`
+ * placeholders, with unconsumed arguments appended space-separated.
+ *
+ * One deliberate deviation from `util.format`: objects render as JSON rather than through
+ * `util.inspect`, so `{ a: 1 }` prints as `{"a":1}`. Reproducing `inspect` (depth limits, circular
+ * references, class names) is not worth carrying in a browser bundle for log output.
+ */
+const format = (message: string, ...params: unknown[]): string => {
+    // util.format leaves the message untouched when there is nothing to substitute, so `%%` only
+    // collapses to `%` once at least one argument is present. Matching that keeps log output stable.
+    if (params.length === 0) {
+        return message;
+    }
+
+    let consumed = 0;
+    const formatted = message.replace(PLACEHOLDER, (placeholder, kind: string) => {
+        if (kind === '%') {
+            return '%';
+        }
+        if (consumed >= params.length) {
+            return placeholder;
+        }
+        const value = params[consumed++];
+        switch (kind) {
+            case 'd':
+                return typeof value === 'bigint' ? `${value}n` : String(Number(value));
+            case 'i':
+                return String(parseInt(String(value), 10));
+            case 'f':
+                return String(parseFloat(String(value)));
+            default:
+                return stringify(value);
+        }
+    });
+
+    const remaining = params.slice(consumed);
+    return remaining.length > 0 ? [formatted, ...remaining.map(stringify)].join(' ') : formatted;
 };
 
 export class LoggerHelperService {

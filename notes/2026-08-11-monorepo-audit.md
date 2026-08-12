@@ -15,16 +15,18 @@ carried over from an earlier survey are marked **unverified here** where they ap
 The findings were re-checked against source and against the packed artifact. Three claims in the
 original write-up were wrong and have been corrected in place, each marked **Correction**.
 
-| Finding | State                                                                           |
-| ------- | ------------------------------------------------------------------------------- |
-| 1       | **Fixed** — `aws-web.core.ts` spread reordered, regression test added           |
-| 3       | **Fixed** — conditional `exports` + root `main`/`module`/`types`                |
-| 4       | **Fixed** — `peerDependencies` dropped, `dependencies` kept                     |
-| 5       | **Partly fixed** — `test:ci` script added, release workflow now lints and tests |
-| 2, 6, 7 | Open — unchanged, and out of scope for a patch release                          |
-| 8       | **Withdrawn** — the claim does not hold; see that section                       |
+| Finding | State                                                                       | Released in  |
+| ------- | --------------------------------------------------------------------------- | ------------ |
+| 1       | **Fixed** — `aws-web.core.ts` spread reordered, regression test added       | 1.5.4        |
+| 3       | **Fixed** — conditional `exports` + root `main`/`module`/`types`            | 1.5.4        |
+| 4       | **Fixed** — `peerDependencies` dropped, `dependencies` kept                 | 1.5.4        |
+| 5       | **Fixed** — `test:ci` script, release workflow lints and tests, `strict` on | 1.5.4 · next |
+| 2       | **Fixed** — `strict: true`, all errors resolved                             | next         |
+| 6       | **Fixed** — `util` and `aws-sdk` imports both gone                          | next         |
+| 7       | **Fixed** — no global credential slot; token storage is the single source   | next         |
+| 8       | **Withdrawn** — the claim does not hold; see that section                   | —            |
 
-Fixes ship in the next release off `main`; they are not in `1.5.3`.
+"next" is the minor release this branch produces. The `1.5.4` row content is live on npm.
 
 ---
 
@@ -147,8 +149,28 @@ done by editing `tsconfig.json` rather than by a fresh config.
 The specs were separately reported as 233 errors. Those are missing jest globals, an artefact of the
 monorepo running vitest; compiled here with `"types": ["node", "jest"]` they produce none.
 
-Tightening `strict` here is a bounded piece of work, and `TS2783` is the reason it is worth doing:
-`tsconfig.json` still sets `"strict": false`, and that is what let finding 1 through.
+Tightening `strict` here is a bounded piece of work, and `TS2783` is the reason it was worth doing:
+`"strict": false` is what let finding 1 through.
+
+### Done
+
+`tsconfig.json` now sets `"strict": true` and drops the explicit `"noImplicitAny": false` that used
+to survive the flag. The count that had to be paid down was smaller than 12, because two of the
+other fixes removed errors on their way past:
+
+| Code      | Count | How it went                                                              |
+| --------- | ----- | ------------------------------------------------------------------------ |
+| `TS7016`  | 5     | added `@types/crypto-js` to `devDependencies`                            |
+| `TS18049` | 3     | disappeared with `AWS.config.credentials` (finding 7)                    |
+| `TS2322`  | 2     | `WebCoreConstructor` re-keyed to a cloud provider, so the factory map is |
+|           |       | `{ [T in CloudProvider]: WebCoreConstructor<T> }` and the cast is gone   |
+| `TS2345`  | 1     | `getSignedClient(endpoint?: string)` — it already guarded internally     |
+| `TS2531`  | 1     | `sig-v4.service.ts` origin match is checked before `[1]` is read         |
+
+The `TS2531` one was a latent defect rather than a type annoyance: `exec()` returns `null` for an
+endpoint with no `http(s)://` origin, and reading `[1]` off it threw a `TypeError` naming the regex.
+It now throws `@endpoint (string) must start with http:// or https://`, covered by
+`src/vendor/sig-v4.service.spec.ts`.
 
 ---
 
@@ -243,12 +265,15 @@ The second point needs narrowing: the repository has no snapshots at all, so "a 
 cannot fail here" is true only vacuously. The live exposure is the other half of the flag — the
 first snapshot anyone writes gets created silently and passes on the run that introduced it.
 
-**Partly fixed on this branch.** `test:ci` (`jest --ci --passWithNoTests`) was added alongside the
-existing scripts, and `release.yml` now runs `pnpm lint` and `pnpm test:ci` before
-`semantic-release`. `--ci` additionally makes jest refuse to write _new_ snapshots rather than
-creating them silently. `--updateSnapshot` stays on the local `test` script, so the convenience
-survives without the gate losing its teeth. Still open: the declarations are still generated under
-`strict: false`, which is finding 2's territory.
+**Fixed.** `test:ci` (`jest --ci --passWithNoTests`) was added alongside the existing scripts, and
+`release.yml` now runs `pnpm lint` and `pnpm test:ci` before `semantic-release`. `--ci` additionally
+makes jest refuse to write _new_ snapshots rather than creating them silently. `--updateSnapshot`
+stays on the local `test` script, so the convenience survives without the gate losing its teeth.
+The declarations are no longer generated under `strict: false` either — see finding 2.
+
+The gate lives in `release.yml`, which triggers on push to `main`. So a red suite stops the
+**publish**, not the merge. A PR-triggered workflow would be needed for pre-merge enforcement; that
+is a separate decision and is not part of this work.
 
 ---
 
@@ -287,9 +312,24 @@ Counted the actual surface used across the source:
 
 That is a credentials constructor and a global slot to write it into. Request signing is
 implemented in this repository (`src/vendor/sig-v4.service.ts`), not delegated to the SDK. aws-sdk
-v2 reached end of support in September 2025 and installs on the order of 100 MB, so replacing this
-with a small local credentials type is a plausible 1.6.0 item — and it would remove the browser shim
-requirement in finding 6 at the same time.
+v2 reached end of support in September 2025 and installs on the order of 100 MB.
+
+### Done
+
+Both imports are gone; `dependencies` is now `axios`, `crypto-js`, `jwt-decode`.
+
+-   `util` — replaced by a local printf formatter in `logger-helper.service.ts` covering
+    `%s %d %i %f %j %o %O %%`. `src/utils/logger-helper.service.spec.ts` checks it against Node's
+    `util.format` for fourteen cases, since jest runs under node and can still reach the oracle the
+    library no longer imports. One deviation is deliberate and asserted: objects render as JSON rather
+    than through `util.inspect`.
+-   `aws-sdk` — `AWS.Credentials` was only ever a carrier for three strings, and the code already had
+    its own `LemonCredentials` type for exactly those. The public methods now return that type
+    (finding 7 covers where the values live). `AWS.Credentials.get(cb)` was doing nothing for
+    statically-constructed credentials, so its replacement is a presence check on the two required
+    keys.
+
+No shim is required now: line 1 of `dist/index.js` is `crypto-js`, `jwt-decode` and `axios` only.
 
 ---
 
@@ -298,6 +338,22 @@ requirement in finding 6 at the same time.
 `AWS.config.credentials` is written directly, so two `WebCore` instances on one page overwrite each
 other. Worth keeping in mind if any consumer ever constructs more than one, and relevant to any
 consumer running under Node rather than a browser.
+
+### Done
+
+The global is gone, and it was **not** replaced with an instance field. Token storage is now the one
+place credentials live, which it already effectively was: every path that wrote the global wrote
+storage first, through `saveOAuthToken()`. `AWSHttpRequestBuilder` reads credentials from the
+`tokenStorage` it is already given — the same object it already reads the region and the identity
+token from — so nothing had to be threaded through and its constructor is unchanged. Storage keys
+are namespaced per `project`, so two cores no longer collide unless they are configured to share.
+
+One behaviour changed for the better as a result. The global was populated by `init()`, so a page
+that had credentials in storage but had not called `init()` sent **unsigned** requests;
+`refreshCachedToken()` carried a `// NOTE: Set up AWS credentials first to enable signed requests`
+line that existed only to paper over that gap. Reading storage directly closes it, and the NOTE
+line is deleted. `logout()` still stops signing, because it clears the storage the signer reads.
+Both directions are covered in `src/http/aws-http-request.builder.spec.ts`.
 
 ---
 
@@ -319,14 +375,16 @@ today. This file lives in `notes/` and can stay there.
 
 ## Priority as this audit sees it
 
-1. **Finding 1** — a live defect on the auth path, cheap to fix, and the file already contains the
-   correct pattern. **Done.**
-2. **Finding 5** — no test gate, and no test script that could be one. That combination is what
-   lets a fix like finding 1 regress without anyone noticing. **Done, apart from `strict`.**
-3. **Findings 3, 4** — bounded cleanups, bundled into the same release. **Done.**
-4. **Finding 2** — `strict` is the one cleanup left, and it is the one that would have caught
-   finding 1 at compile time.
-5. **Findings 6, 7** — replacing aws-sdk v2 is a minor-version conversation, not a patch.
+Every finding has now been acted on, in two releases.
+
+1. **Finding 1** — a live defect on the auth path, cheap to fix, and the file already contained the
+   correct pattern. **Done, 1.5.4.**
+2. **Findings 3, 4, 5** — bounded cleanups and the missing gate, bundled into that same release.
+   **Done, 1.5.4.**
+3. **Findings 2, 6, 7** — `strict`, the browser-hostile imports and the global credential slot.
+   These landed together because they are the same knot: removing aws-sdk deleted three of the
+   `strict` errors outright, and `strict` is what would have caught finding 1 at compile time.
+   **Done, next release.**
 
 Finding 8 is withdrawn and needs nothing.
 
@@ -335,7 +393,8 @@ Finding 8 is withdrawn and needs nothing.
 Relevant to any plan that names a version, because this repository overrides the preset. The
 `releaseRules` in `package.json` map `feat`, `fix`, `refactor` and `chore` all to **patch**; a minor
 bump requires the commit **scope** `minor` (`feat(minor): …`) and a major requires scope `major`.
-So "a 1.6.0 item" is not something `feat:` produces here. Two further consequences:
+So a minor release is not something `feat:` produces here — the aws-sdk removal needed
+`feat(minor):` to land as one. Two further consequences:
 
 -   `docs:` has no rule and no release under the conventionalcommits preset. A branch that lands on
     `main` with only `docs:` commits publishes nothing — worth checking when a release seems to have

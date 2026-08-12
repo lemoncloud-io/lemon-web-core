@@ -16,7 +16,6 @@ import { AWSStorageService, USE_X_LEMON_IDENTITY_KEY, USE_X_LEMON_LANGUAGE_KEY }
 import { calcSignature, LoggerService } from '../utils';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { AWSHttpRequestBuilder, HttpRequestBuilder } from '../http';
-import AWS from 'aws-sdk/global.js';
 
 /**
  * AWSWebCore class implements AWS-based operations for Lemoncloud authentication logic.
@@ -94,9 +93,7 @@ export class AWSWebCore implements WebCoreService {
             return 'no-token';
         }
 
-        // build AWS credential without refresh
-        const credential = await this.tokenStorage.getCachedCredentials();
-        this.createAWSCredentials(credential);
+        // credentials already live in token storage, so there is nothing to publish anywhere else
         this.logger.info('initialized with token!');
         return 'build';
     }
@@ -274,25 +271,8 @@ export class AWSWebCore implements WebCoreService {
                 return refreshed !== null;
             }
 
-            return new Promise(resolve => {
-                try {
-                    const credentials = AWS.config.credentials as AWS.Credentials;
-                    if (!credentials) {
-                        resolve(false);
-                        return;
-                    }
-
-                    credentials.get(error => {
-                        if (error) {
-                            this.logger.error('get AWSConfig.credentials error: ', error);
-                        }
-                        resolve(!error);
-                    });
-                } catch (e) {
-                    this.logger.error('isAuthenticated error: ', e);
-                    resolve(false);
-                }
-            });
+            const { AccessKeyId, SecretKey } = await this.tokenStorage.getCachedCredentials();
+            return !!AccessKeyId && !!SecretKey;
         } catch (error) {
             this.logger.error('isAuthenticated error:', error);
             return false;
@@ -300,50 +280,55 @@ export class AWSWebCore implements WebCoreService {
     }
 
     /**
-     * Builds AWS credentials from an OAuth token and sets them in AWS.config.
-     * Saves the token to storage and creates AWS credentials for subsequent API calls.
+     * Saves an OAuth token to storage and returns the credentials it carries.
+     * Signed requests read credentials back from that storage, so this is what makes them usable.
      *
      * @param {LemonOAuthToken} token - The OAuth token containing AWS credential information
-     * @returns {Promise<AWS.Credentials>} Promise resolving to the built AWS credentials
-     * @throws {Error} Throws if token is invalid or AWS credentials cannot be created
+     * @returns {Promise<LemonCredentials>} Promise resolving to the saved credentials
+     * @throws {Error} Throws if the token carries no access key or secret key
      *
      * @example
      * ```typescript
      * const credentials = await webCore.buildCredentialsByToken(oauthToken);
-     * // AWS.config.credentials is now set and ready for use
+     * // subsequent signed requests now authenticate with these credentials
      * ```
      */
-    async buildCredentialsByToken(token: LemonOAuthToken): Promise<AWS.Credentials> {
+    async buildCredentialsByToken(token: LemonOAuthToken): Promise<LemonCredentials> {
         this.logger.log('buildCredentialsByToken()...');
-        await this.buildAWSCredentialsByToken(token);
-
-        const credentials = AWS.config.credentials as AWS.Credentials;
-        if (!credentials) {
-            throw new Error('Failed to build AWS credentials');
+        const { credential } = token;
+        const { AccessKeyId, SecretKey } = credential;
+        if (!AccessKeyId) {
+            throw new Error('.AccessKeyId (string) is required!');
         }
-        return credentials;
+        if (!SecretKey) {
+            throw new Error('.SecretKey (string) is required!');
+        }
+
+        await this.tokenStorage.saveOAuthToken(token);
+        return credential;
     }
 
     /**
-     * Builds AWS credentials from cached storage data and sets them in AWS.config.
-     * Uses previously stored credential information to recreate AWS credentials.
+     * Reads the cached credentials back out of storage and validates them.
      *
-     * @returns {Promise<AWS.Credentials>} Promise resolving to the built AWS credentials
-     * @throws {Error} Throws if cached credentials are invalid or AWS credentials cannot be created
+     * @returns {Promise<LemonCredentials>} Promise resolving to the cached credentials
+     * @throws {Error} Throws if the cached credentials are missing an access key or secret key
      *
      * @example
      * ```typescript
      * const credentials = await webCore.buildCredentialsByStorage();
-     * // AWS.config.credentials is now set from cached data
      * ```
      */
-    async buildCredentialsByStorage(): Promise<AWS.Credentials> {
+    async buildCredentialsByStorage(): Promise<LemonCredentials> {
         this.logger.log('buildCredentialsByStorage()...');
-        await this.buildAWSCredentialsByStorage();
+        const credentials = await this.tokenStorage.getCachedCredentials();
 
-        const credentials = AWS.config.credentials as AWS.Credentials;
-        if (!credentials) {
-            throw new Error('Failed to build AWS credentials from storage');
+        const { AccessKeyId, SecretKey } = credentials;
+        if (!AccessKeyId) {
+            throw new Error('.AccessKeyId (string) is required!');
+        }
+        if (!SecretKey) {
+            throw new Error('.SecretKey (string) is required!');
         }
         return credentials;
     }
@@ -363,11 +348,11 @@ export class AWSWebCore implements WebCoreService {
 
     /**
      * Refreshes the cached OAuth token by calling the refresh endpoint.
-     * Obtains new credentials and updates AWS.config with fresh authentication data.
+     * Obtains new credentials and writes them to token storage.
      *
      * @param {string} [domain=''] - Optional domain parameter for multi-tenant refresh requests
      * @param {string} [url=''] - Optional custom URL for the refresh endpoint, defaults to config.oAuthEndpoint
-     * @returns {Promise<AWS.Credentials | null>} Promise resolving to new AWS credentials on success,
+     * @returns {Promise<LemonCredentials | null>} Promise resolving to new AWS credentials on success,
      *                                           null if refresh fails or token is invalid
      * @throws {Error} Logs errors but returns null instead of throwing
      *
@@ -381,16 +366,12 @@ export class AWSWebCore implements WebCoreService {
      * }
      * ```
      */
-    async refreshCachedToken(domain: string = '', url: string = '') {
+    async refreshCachedToken(domain: string = '', url: string = ''): Promise<LemonCredentials | null> {
         try {
             const cached = await this.tokenStorage.getCachedOAuthToken();
             if (!cached.authId) {
                 throw new Error('authId is required for token refresh');
             }
-
-            // NOTE: Set up AWS credentials first to enable signed requests
-            const cachedCredentials = await this.tokenStorage.getCachedCredentials();
-            this.createAWSCredentials(cachedCredentials);
 
             const payload = {
                 authId: cached.authId,
@@ -437,7 +418,7 @@ export class AWSWebCore implements WebCoreService {
      * @param {string} changeSiteBody.siteId - The identifier of the target site to switch to
      * @param {string} changeSiteBody.userId - The user identifier for the site change operation
      * @param {string} [url] - Optional custom URL for the site change endpoint
-     * @returns {Promise<AWS.Credentials>} Promise resolving to new AWS credentials for the target site
+     * @returns {Promise<LemonCredentials>} Promise resolving to new AWS credentials for the target site
      * @throws {Error} Throws if changeSiteBody is invalid, authId is missing, or site change fails
      *
      * @example
@@ -449,7 +430,7 @@ export class AWSWebCore implements WebCoreService {
      * // User is now authenticated for the new site
      * ```
      */
-    async changeUserSite(changeSiteBody: ChangeSiteBody, url?: string): Promise<AWS.Credentials> {
+    async changeUserSite(changeSiteBody: ChangeSiteBody, url?: string): Promise<LemonCredentials> {
         if (!changeSiteBody || !changeSiteBody.siteId || !changeSiteBody.userId) {
             throw new Error('@changeSiteBody required');
         }
@@ -491,7 +472,6 @@ export class AWSWebCore implements WebCoreService {
      * ```
      */
     async logout(): Promise<void> {
-        AWS.config.credentials = null;
         await this.tokenStorage.clearOAuthToken();
         return;
     }
@@ -560,7 +540,7 @@ export class AWSWebCore implements WebCoreService {
      * Retrieves current AWS credentials, refreshing them if necessary.
      * Checks token validity and performs refresh if the token is expired or near expiration.
      *
-     * @returns {Promise<AWS.Credentials | null>} Promise resolving to current AWS credentials,
+     * @returns {Promise<LemonCredentials | null>} Promise resolving to current AWS credentials,
      *                                           or null if no valid token exists or refresh fails
      * @throws {Error} Logs errors but returns null instead of throwing
      *
@@ -574,7 +554,7 @@ export class AWSWebCore implements WebCoreService {
      * }
      * ```
      */
-    async getCredentials(): Promise<AWS.Credentials | null> {
+    async getCredentials(): Promise<LemonCredentials | null> {
         const hasCachedToken = await this.tokenStorage.hasCachedToken();
         if (!hasCachedToken) {
             this.logger.info('has no cached token!');
@@ -594,90 +574,20 @@ export class AWSWebCore implements WebCoreService {
     }
 
     /**
-     * Builds AWS credentials from cached storage data.
-     * Private method that creates AWS.Credentials object from stored credential data.
+     * Retrieves the cached credentials and confirms they are usable for signing.
      *
      * @private
-     * @returns {Promise<void>} Promise that resolves when credentials are built and set
-     * @throws {Error} Throws if cached credentials are missing or invalid
+     * @returns {Promise<LemonCredentials>} Promise resolving to the cached credentials
+     * @throws {Error} Throws if no usable credentials are cached
      */
-    private async buildAWSCredentialsByStorage(): Promise<void> {
-        this.logger.log('buildAWSCredentialsByStorage()...');
+    private async getCurrentCredentials(): Promise<LemonCredentials> {
         const credentials = await this.tokenStorage.getCachedCredentials();
-
         const { AccessKeyId, SecretKey } = credentials;
-        if (!AccessKeyId) {
-            throw new Error('.AccessKeyId (string) is required!');
+        if (!AccessKeyId || !SecretKey) {
+            throw new Error('No AWS credentials configured');
         }
-        if (!SecretKey) {
-            throw new Error('.SecretKey (string) is required!');
-        }
-        this.createAWSCredentials(credentials);
-    }
 
-    /**
-     * Retrieves the current AWS credentials from AWS.config.
-     * Private method that validates and returns the currently configured AWS credentials.
-     *
-     * @private
-     * @returns {Promise<AWS.Credentials>} Promise resolving to current AWS credentials
-     * @throws {Error} Throws if no credentials are configured or credential validation fails
-     */
-    private getCurrentCredentials(): Promise<AWS.Credentials> {
-        return new Promise((resolve, reject) => {
-            const credentials = AWS.config.credentials as AWS.Credentials;
-            if (!credentials) {
-                reject(new Error('No AWS credentials configured'));
-                return;
-            }
-
-            credentials.get(error => {
-                if (error) {
-                    this.logger.error('Error on getCurrentCredentials: ', error);
-                    reject(error);
-                } else {
-                    this.logger.info('success to get AWS credentials');
-                    resolve(credentials);
-                }
-            });
-        });
-    }
-
-    /**
-     * Builds AWS credentials from an OAuth token and saves to storage.
-     * Private method that processes token data, saves it to storage, and creates AWS credentials.
-     *
-     * @private
-     * @param {LemonOAuthToken} token - The OAuth token containing credential information
-     * @returns {Promise<void>} Promise that resolves when token is saved and credentials are created
-     * @throws {Error} Throws if token is missing required fields or credential creation fails
-     */
-    private async buildAWSCredentialsByToken(token: LemonOAuthToken): Promise<void> {
-        const { credential } = token;
-        const { AccessKeyId, SecretKey } = credential;
-        if (!AccessKeyId) {
-            throw new Error('.AccessKeyId (string) is required!');
-        }
-        if (!SecretKey) {
-            throw new Error('.SecretKey (string) is required!');
-        }
-        await this.tokenStorage.saveOAuthToken(token);
-        return this.createAWSCredentials(credential);
-    }
-
-    /**
-     * Creates and sets AWS credentials in the global AWS configuration.
-     * Private method that instantiates AWS.Credentials and assigns it to AWS.config.credentials.
-     *
-     * @private
-     * @param {LemonCredentials} credentials - The credential object containing AWS access keys
-     * @param {string} credentials.AccessKeyId - AWS access key identifier
-     * @param {string} credentials.SecretKey - AWS secret access key
-     * @param {string} [credentials.SessionToken] - Optional AWS session token for temporary credentials
-     * @returns {void} No return value, sets AWS.config.credentials directly
-     */
-    private createAWSCredentials(credentials: LemonCredentials) {
-        const { AccessKeyId, SecretKey, SessionToken } = credentials;
-        AWS.config.credentials = new AWS.Credentials(AccessKeyId, SecretKey, SessionToken);
+        this.logger.info('success to get AWS credentials');
+        return credentials;
     }
 }
