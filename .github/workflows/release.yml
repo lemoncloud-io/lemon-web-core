@@ -33,6 +33,12 @@ jobs:
                   version: 8
                   run_install: true
 
+            - name: Lint
+              run: pnpm lint
+
+            - name: Test
+              run: pnpm test:ci
+
             - name: Release
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

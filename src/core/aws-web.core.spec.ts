@@ -397,6 +397,36 @@ describe('AWSWebCore', () => {
             expect(result).toBeNull();
             expect(mockLogger.error).toHaveBeenCalledWith('token refresh failed:', expect.any(Error));
         });
+
+        it('should keep cached values when the response carries them with falsy values', async () => {
+            jest.spyOn(awsWebCore, 'signedRequest').mockResolvedValue({
+                data: { ...mockToken, identityToken: '', identityPoolId: '' },
+            } as any);
+
+            await awsWebCore.refreshCachedToken();
+
+            expect(awsWebCore.buildCredentialsByToken).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    identityToken: mockToken.identityToken,
+                    identityPoolId: mockToken.identityPoolId,
+                })
+            );
+        });
+
+        it('should take the refreshed values when the response carries them', async () => {
+            jest.spyOn(awsWebCore, 'signedRequest').mockResolvedValue({
+                data: { ...mockToken, identityToken: 'new-identity-token', identityPoolId: 'new-pool-id' },
+            } as any);
+
+            await awsWebCore.refreshCachedToken();
+
+            expect(awsWebCore.buildCredentialsByToken).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    identityToken: 'new-identity-token',
+                    identityPoolId: 'new-pool-id',
+                })
+            );
+        });
     });
 
     describe('changeUserSite', () => {
