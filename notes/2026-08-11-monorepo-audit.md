@@ -12,7 +12,7 @@ carried over from an earlier survey are marked **unverified here** where they ap
 
 ## Status as of 2026-08-12
 
-The findings were re-checked against source and against the packed artifact. Three claims in the
+The findings were re-checked against source and against the packed artifact. Four claims in the
 original write-up were wrong and have been corrected in place, each marked **Correction**.
 
 | Finding | State                                                                       | Released in  |
@@ -32,8 +32,8 @@ original write-up were wrong and have been corrected in place, each marked **Cor
 
 ## 1. Token refresh destroys the fallback it just computed — `src/core/aws-web.core.ts:417-421`
 
-**This is a defect in the published package.** Three products currently run it. **Fixed on this
-branch**; `1.5.3` and earlier still carry it.
+**This is a defect in the published package.** Three products ran it. **Fixed in 1.5.4**; `1.5.3`
+and earlier still carry it.
 
 ```ts
 const tokenData = response.data.Token || response.data;
@@ -68,8 +68,8 @@ is a slip rather than an intentional choice, and it is also the shape the fix sh
 
 ### Why it is worth fixing rather than noting
 
-The bad object does not stop at the caller. `buildCredentialsByToken()` → `buildAWSCredentialsByToken()`
-calls `this.tokenStorage.saveOAuthToken(token)`, so the value is persisted:
+The bad object does not stop at the caller. `buildCredentialsByToken()` calls
+`this.tokenStorage.saveOAuthToken(token)`, so the value is persisted:
 
 | Step          | Code                                                         | Effect with a falsy `identityToken`                                                  |
 | ------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
@@ -187,7 +187,7 @@ because the package is also `"type": "module"`, a CommonJS `require()` lands on 
 throws `ERR_REQUIRE_ESM` on Node versions without `require(esm)`. The CJS build ships in the tarball
 and cannot be reached at all.
 
-**Fixed on this branch** with conditional exports, plus the root fields a `node10`-style resolver
+**Fixed in 1.5.4** with conditional exports, plus the root fields a `node10`-style resolver
 still needs:
 
 ```json
@@ -226,7 +226,7 @@ Worth knowing when picking the ranges: inside `lemon-front-monorepo`, yarn hoist
 `axios@1.19.0` and this package has no nested copy, so `^1.7.2` is already being satisfied by a
 version well above its floor in at least one real deployment.
 
-**Fixed on this branch** by dropping `peerDependencies` entirely and keeping `dependencies`. That
+**Fixed in 1.5.4** by dropping `peerDependencies` entirely and keeping `dependencies`. That
 direction is the non-breaking one: consumers keep getting the three packages installed for them, and
 nothing that resolves today stops resolving. Dropping them from `dependencies` instead would have
 required every consumer to add them, which is a major-version change.
