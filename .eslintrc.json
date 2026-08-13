@@ -8,7 +8,31 @@
         "no-useless-catch": "off",
         "@typescript-eslint/no-explicit-any": "off",
         "curly": "error",
+        "no-restricted-imports": [
+            "error",
+            {
+                "paths": [
+                    {
+                        "name": "util",
+                        "message": "Node builtin. This is a browser library, so importing it leaves the bundler to shim it. Use the local formatter in utils/logger-helper.service.ts."
+                    },
+                    {
+                        "name": "aws-sdk",
+                        "message": "aws-sdk v2 was removed in 2.0.0. Credentials are LemonCredentials and live in token storage."
+                    }
+                ],
+                "patterns": ["aws-sdk/*", "node:*"]
+            }
+        ],
         "unused-imports/no-unused-imports": "error",
         "sort-imports": ["error", { "ignoreDeclarationSort": true, "ignoreCase": true }]
-    }
+    },
+    "overrides": [
+        {
+            "files": ["*.spec.ts", "*.test.ts"],
+            "rules": {
+                "no-restricted-imports": "off"
+            }
+        }
+    ]
 }

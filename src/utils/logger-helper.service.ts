@@ -42,6 +42,10 @@ const stringify = (value: unknown): string => {
     if (typeof value === 'bigint') {
         return `${value}n`;
     }
+    // String(-0) is '0'; util.format keeps the sign.
+    if (typeof value === 'number') {
+        return Object.is(value, -0) ? '-0' : String(value);
+    }
     if (value instanceof Error) {
         return value.stack || value.message;
     }
@@ -102,7 +106,7 @@ const format = (message: string, ...params: unknown[]): string => {
 
         switch (kind) {
             case 'd':
-                return String(Number(value));
+                return stringify(Number(value));
             case 'i':
                 return String(parseInt(String(value), 10));
             case 'f':

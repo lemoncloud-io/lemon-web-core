@@ -15,10 +15,6 @@ describe('AWSHttpRequestBuilder', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        // 'should execute request correctly' below leaves axios.create resolving a promise, so restore
-        // the implementation here rather than letting the tests depend on their order in this file.
-        (axios.create as jest.Mock).mockImplementation(() => axios);
-
         tokenStorage = new AWSStorageService({ project: 'test', cloud: 'aws', oAuthEndpoint: 'http://localhost' });
         config = {
             method: 'GET',
@@ -78,7 +74,6 @@ describe('AWSHttpRequestBuilder', () => {
     it('should execute request correctly', async () => {
         const builder = new AWSHttpRequestBuilder(tokenStorage, config);
         const mockedAxios = axios.create as jest.Mock;
-        mockedAxios.mockResolvedValue({ data: 'response' });
         expect(mockedAxios).toHaveBeenCalledWith(expect.objectContaining(config));
 
         const mockedRequest = axios.request as jest.Mock;

@@ -45,6 +45,11 @@ describe('LoggerHelperService', () => {
             ['%s null', [null]],
             ['%s undefined', [undefined]],
             ['%d unparseable', ['12abc']],
+            ['%d negative zero', [-0]],
+            ['%s negative zero', [-0]],
+            ['%i negative zero', [-0]],
+            ['%f negative zero', [-0]],
+            ['appended negative zero', [-0]],
         ];
 
         it.each(equivalent)('should match util.format for %p', (message, params) => {
