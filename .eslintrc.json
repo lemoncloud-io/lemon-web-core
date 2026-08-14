@@ -18,7 +18,7 @@
                     },
                     {
                         "name": "aws-sdk",
-                        "message": "aws-sdk v2 was removed in 2.0.0. Credentials are LemonCredentials and live in token storage."
+                        "message": "aws-sdk v2 was removed in 1.6.0. Credentials are LemonCredentials and live in token storage."
                     }
                 ],
                 "patterns": ["aws-sdk/*", "node:*"]
