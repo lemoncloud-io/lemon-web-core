@@ -1,7 +1,6 @@
 import axios, { AxiosHeaders, AxiosInstance, AxiosRequestConfig } from 'axios';
 import { Body, Headers, HttpRequestData, HttpResponse, Params } from '../types';
 import { AWSStorageService, REGION_KEY, USE_X_LEMON_IDENTITY_KEY, USE_X_LEMON_LANGUAGE_KEY } from '../token-storage';
-import AWS from 'aws-sdk/global.js';
 import { sigV4Client } from '../vendor';
 import { isEmptyObject, LoggerService } from '../utils';
 
@@ -139,23 +138,25 @@ export class AWSHttpRequestBuilder {
     /**
      * Gets the signed AWS client.
      * @private
-     * @param {string} endpoint - The endpoint for the client.
-     * @returns {Promise<any>} - The signed AWS client.
-     * @throws {Error} If endpoint is not provided or signed client is not available.
+     * @param {string} [endpoint] - The endpoint for the client.
+     * @returns {Promise<any>} - The signed AWS client, or `false` when token storage holds no
+     *                           credentials, in which case the request goes out unsigned.
+     * @throws {Error} If endpoint is not provided.
      */
-    private async getSignedClient(endpoint: string): Promise<any> {
+    private async getSignedClient(endpoint?: string): Promise<any> {
         if (!endpoint) {
             throw new Error('@endpoint (string) is required!');
         }
 
         const region = await this.tokenStorage.getItem(REGION_KEY);
-        const ok = AWS.config && AWS.config.credentials;
+        const { AccessKeyId, SecretKey, SessionToken } = await this.tokenStorage.getCachedCredentials();
+        const hasCredentials = !!AccessKeyId && !!SecretKey;
         const signedClient =
-            ok &&
+            hasCredentials &&
             sigV4Client.newClient({
-                accessKey: AWS.config.credentials.accessKeyId,
-                secretKey: AWS.config.credentials.secretAccessKey,
-                sessionToken: AWS.config.credentials.sessionToken,
+                accessKey: AccessKeyId,
+                secretKey: SecretKey,
+                sessionToken: SessionToken,
                 region: region || 'ap-northeast-2',
                 endpoint: endpoint,
                 host: this.extractHostname(endpoint),

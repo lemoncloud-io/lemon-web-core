@@ -5,12 +5,10 @@
         "module": "commonjs",
         "types": ["node", "jest"],
         "esModuleInterop": true,
-        "noImplicitAny": false,
         "forceConsistentCasingInFileNames": true,
-        "strict": false,
+        "strict": true,
         "skipLibCheck": true,
-        "skipDefaultLibCheck": true,
-        "strictPropertyInitialization": false
+        "skipDefaultLibCheck": true
     },
     "include": ["src"]
 }

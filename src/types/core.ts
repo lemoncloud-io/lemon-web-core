@@ -70,6 +70,6 @@ export type WebCoreConfig<T extends CloudProvider> = {
 
 /**
  * Type representing a constructor for a web core service.
- * @template T - The web core service type.
+ * @template T - The cloud provider the constructor is for.
  */
-export type WebCoreConstructor<T extends WebCoreService> = new (config: WebCoreConfig<CloudProvider>) => T;
+export type WebCoreConstructor<T extends CloudProvider> = new (config: WebCoreConfig<T>) => WebCoreServiceMap[T];

@@ -235,7 +235,11 @@ sigV4Client.newClient = function (config: any) {
     awsSigV4Client.defaultContentType = config.defaultContentType || 'application/json';
 
     const invokeUrl = config.endpoint;
-    const endpoint = /(^https?:\/\/[^/]+)/g.exec(invokeUrl)[1];
+    const matchedOrigin = /(^https?:\/\/[^/]+)/g.exec(invokeUrl);
+    if (!matchedOrigin) {
+        throw new Error('@endpoint (string) must start with http:// or https://');
+    }
+    const endpoint = matchedOrigin[1];
     const pathComponent = invokeUrl.substring(endpoint.length);
 
     awsSigV4Client.endpoint = endpoint;

@@ -152,7 +152,7 @@ console.log(isAuthenticated);
 
 ### WebCoreFactory
 
--   `create<T extends WebCoreService>(config: WebCoreConfig<CloudProvider>): T`
+-   `create<T extends CloudProvider>(config: WebCoreConfig<T>): WebCoreServiceMap[T]`
 
 Creates an instance of `AWSWebCore` or `AzureWebCore` based on the provided cloud provider configuration.
 
