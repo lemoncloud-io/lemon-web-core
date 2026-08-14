@@ -20,14 +20,14 @@ original write-up were wrong and have been corrected in place, each marked **Cor
 | 1       | **Fixed** — `aws-web.core.ts` spread reordered, regression test added       | 1.5.4         |
 | 3       | **Fixed** — conditional `exports` + root `main`/`module`/`types`            | 1.5.4         |
 | 4       | **Fixed** — `peerDependencies` dropped, `dependencies` kept                 | 1.5.4         |
-| 5       | **Fixed** — `test:ci` script, release workflow lints and tests, `strict` on | 1.5.4 · 2.0.0 |
-| 2       | **Fixed** — `strict: true`, all errors resolved                             | 2.0.0         |
-| 6       | **Fixed** — `util` and `aws-sdk` imports both gone                          | 2.0.0         |
-| 7       | **Fixed** — no global credential slot; token storage is the single source   | 2.0.0         |
+| 5       | **Fixed** — `test:ci` script, release workflow lints and tests, `strict` on | 1.5.4 · 1.6.0 |
+| 2       | **Fixed** — `strict: true`, all errors resolved                             | 1.6.0         |
+| 6       | **Fixed** — `util` and `aws-sdk` imports both gone                          | 1.6.0         |
+| 7       | **Fixed** — no global credential slot; token storage is the single source   | 1.6.0         |
 | 8       | **Withdrawn** — the claim does not hold; see that section                   | —             |
 
-`1.5.4` is live on npm. `2.0.0` is what this branch produces — major rather than minor because the
-public return types change; see the release section at the end.
+Both are live on npm. `1.6.0` carries a breaking change to the public return types despite the minor
+number; see the release section at the end.
 
 ---
 
@@ -389,7 +389,7 @@ Every finding has now been acted on, in two releases.
 3. **Findings 2, 6, 7** — `strict`, the browser-hostile imports and the global credential slot.
    These landed together because they are the same knot: removing aws-sdk deleted three of the
    `strict` errors outright, and `strict` is what would have caught finding 1 at compile time.
-   **Done, 2.0.0.**
+   **Done, 1.6.0.**
 
 Finding 8 is withdrawn and needs nothing.
 
@@ -400,11 +400,19 @@ Relevant to any plan that names a version, because this repository overrides the
 bump requires the commit **scope** `minor` (`feat(minor): …`) and a major requires scope `major`.
 So a minor release is not something `feat:` produces here; it needs `feat(minor):`.
 
-The aws-sdk removal went out as **2.0.0** rather than the minor first planned. A `BREAKING CHANGE:`
-footer in the commit body outranks all of this: commit-analyzer prepends the preset's own
-`{ breaking: true, release: 'major' }` ahead of the custom `releaseRules`, so the footer wins. That
-is the right answer here — the public methods changed return type — but it is worth knowing that
-the footer, not the scope, is what decided it. Two further consequences:
+The aws-sdk removal shipped as **1.6.0**, and it is a breaking change: the public methods changed
+return type and `AWS.config.credentials` is no longer written. Anyone reading semver off the version
+number alone will not expect that, so the break is recorded here and in the `BREAKING CHANGE:` footer
+of `feat(minor): drop the aws-sdk v2 dependency and compile under strict`, which reaches the
+changelog. Consumers on a `^1.5.x` range pull it on their next install without editing anything.
+
+Worth knowing for the next one: a `BREAKING CHANGE:` footer normally outranks everything here —
+commit-analyzer prepends the preset's own `{ breaking: true, release: 'major' }` ahead of the custom
+`releaseRules`, and a dry-run against the merge candidate did report `major` / `2.0.0`. The published
+version is `1.6.0`, so the commit that landed on `main` did not carry the footer through. If a future
+release must be major, check the merge commit's body rather than the branch's.
+
+Two further consequences:
 
 -   `docs:` has no rule and no release under the conventionalcommits preset. A branch that lands on
     `main` with only `docs:` commits publishes nothing — worth checking when a release seems to have
