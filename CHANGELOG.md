@@ -1,3 +1,63 @@
+# [1.6.0](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.5.4...v1.6.0) (2026-08-14)
+
+### Bug Fixes
+
+- **logger:** match util.format on symbols, bigints and %j ([9a34f1f](https://github.com/lemoncloud-io/lemon-web-core/commit/9a34f1f4f3ab5e11751745ef9b90fa9ec81bfa0b)), closes [#55](https://github.com/lemoncloud-io/lemon-web-core/issues/55)
+
+### Features
+
+- **minor:** drop the aws-sdk v2 dependency and compile under strict ([6ea8e8d](https://github.com/lemoncloud-io/lemon-web-core/commit/6ea8e8da7c6842a535271d145dde435b0a3e534d))
+
+### BREAKING CHANGES
+
+- **minor:** methods that returned AWS.Credentials now return
+  LemonCredentials, and AWS.config.credentials is no longer written. Consumers
+  that annotated with AWS.Credentials or read the global slot need updating; the
+  three fields (AccessKeyId, SecretKey, SessionToken) are unchanged.
+
+aws-sdk (finding 6)
+The SDK contributed a credentials constructor and a global slot to write it
+into; request signing was already implemented here in sig-v4.service.ts.
+AWS.Credentials only ever carried three strings, and LemonCredentials already
+described exactly those. AWS.Credentials.get(cb) was a no-op for statically
+constructed credentials, so it becomes a presence check on the two required
+keys. aws-sdk v2 reached end of support in September 2025.
+
+Also removed: import { format } from 'util' in logger-helper.service.ts, a
+Node builtin at the top level of a browser library. Replaced by a local
+printf formatter, checked against util.format for fourteen cases. Objects
+render as JSON rather than through util.inspect - a deliberate, asserted
+deviation. dist/index.js now imports only crypto-js, jwt-decode and axios, so
+consumers no longer need the process/global shim in their bundler config.
+
+Global credential state (finding 7)
+The global is gone and was not replaced with an instance field. Token storage
+is the single source: every path that wrote the global wrote storage first via
+saveOAuthToken(). AWSHttpRequestBuilder reads credentials from the tokenStorage
+it already holds, so no threading and no constructor change. Storage keys are
+namespaced per project, so two cores no longer collide.
+
+This fixes a real gap. The global was populated by init(), so a page with
+credentials in storage that had not called init() sent unsigned requests -
+refreshCachedToken() carried a NOTE line that existed only to paper over it.
+That line is deleted. logout() still stops signing, because it clears the
+storage the signer reads.
+
+strict (finding 2)
+tsconfig.json sets strict: true and drops the explicit noImplicitAny: false
+that survived the CLI flag. TS7016 x5 fixed by @types/crypto-js; TS18049 x3
+vanished with the global; TS2322 x2 by re-keying WebCoreConstructor to a cloud
+provider so the factory map needs no cast; TS2345 by letting getSignedClient
+take an optional endpoint, which it already guarded internally.
+
+TS2531 was a latent defect, not a type annoyance: exec() returns null for an
+endpoint with no http(s) origin, and reading [1] off it threw a TypeError
+naming the regex. It now throws a message naming the endpoint.
+
+Tests: 79 passing across 7 suites, up from 53 across 5. New coverage for the
+signed and unsigned request paths, the credential build and validation paths,
+the formatter, and the sig-v4 endpoint guard.
+
 ## [1.5.4](https://github.com/lemoncloud-io/lemon-web-core/compare/v1.5.3...v1.5.4) (2026-08-12)
 
 ### Bug Fixes
